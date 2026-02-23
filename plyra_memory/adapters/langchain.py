@@ -17,9 +17,9 @@ class PlyraMemory:
         await lc_mem.asave_context({"input": "hi"}, {"output": "hey!"})
     """
 
-    memory_key: str = "memory_context"
+    memory_key: str = "history"
 
-    def __init__(self, memory: Any, memory_key: str = "memory_context") -> None:
+    def __init__(self, memory: Any, memory_key: str = "history") -> None:
         self._memory = memory
         self.memory_key = memory_key
 

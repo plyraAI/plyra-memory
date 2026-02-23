@@ -82,5 +82,6 @@ disable_error_code = ["import-untyped"]
 
 [dependency-groups]
 dev = [
+    "pytest-randomly>=4.0.1",
     "truststore>=0.10.4",
 ]

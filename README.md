@@ -36,22 +36,10 @@ from plyra_memory import Memory, WorkingEntry, Episode, EpisodeEvent, Fact, Fact
 
 async def main():
     async with Memory(agent_id="my-agent") as mem:
-        # Working memory — session scratchpad
-        await mem.working.add(WorkingEntry(
-            session_id=mem.session_id,
-            agent_id=mem.agent_id,
-            content="User is debugging LangGraph",
-        ))
+        # Universal write
+        await mem.remember("User is debugging LangGraph")
 
-        # Episodic memory — record events
-        await mem.episodic.record(Episode(
-            session_id=mem.session_id,
-            agent_id=mem.agent_id,
-            event=EpisodeEvent.USER_MESSAGE,
-            content="How do I add memory to my agent?",
-        ))
-
-        # Semantic memory — learn facts
+        # Semantic memory — learn explicit facts
         await mem.semantic.learn(Fact(
             agent_id=mem.agent_id,
             subject="LangGraph",
@@ -214,4 +202,7 @@ docker compose up
 
 ## License
 
-MIT
+Apache-2.0
+
+## Documentation
+For complete documentation, visit [plyraai.github.io/plyra-memory](https://plyraai.github.io/plyra-memory)

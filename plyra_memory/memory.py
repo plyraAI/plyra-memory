@@ -329,9 +329,10 @@ class Memory:
             metadata=meta,
         )
         results["working"] = await self.working.add(entry)
+        results["working_entry"] = results["working"]
 
         # 2. Episodic layer
-        episode = Episode(
+        episode_obj = Episode(
             session_id=self._session_id,
             agent_id=self._agent_id,
             event=event,
@@ -340,7 +341,8 @@ class Memory:
             tool_name=tool_name,
             metadata=meta,
         )
-        results["episodic"] = await self.episodic.record(episode)
+        results["episodic"] = await self.episodic.record(episode_obj)
+        results["episode"] = results["episodic"]
 
         # 3. Semantic — extract facts (never raises)
         results["facts"] = await self._extract_and_learn(content)

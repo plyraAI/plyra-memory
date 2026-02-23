@@ -93,7 +93,7 @@ def create_app(config: MemoryConfig | None = None) -> FastAPI:
         working = await store.get_working_entries(mem.session_id)
         ep_query = EpisodicQuery(agent_id=mem.agent_id, top_k=200)
         episodes_count = len(await store.get_episodes(ep_query))
-        fact_query = SemanticQuery(agent_id=mem.agent_id, top_k=200)
+        fact_query = SemanticQuery(agent_id=mem.agent_id, top_k=100)
         facts_count = len(await store.get_facts(fact_query))
         vector_count = await vectors.count()
 
@@ -112,9 +112,11 @@ def create_app(config: MemoryConfig | None = None) -> FastAPI:
     async def add_working(entry: dict[str, Any]):
         mem = _get_memory()
         assert mem.working is not None
+        sid = entry.pop("session_id", mem.session_id)
+        aid = entry.pop("agent_id", mem.agent_id)
         we = WorkingEntry(
-            session_id=mem.session_id,
-            agent_id=mem.agent_id,
+            session_id=sid,
+            agent_id=aid,
             **entry,
         )
         result = await mem.working.add(we)
@@ -124,8 +126,8 @@ def create_app(config: MemoryConfig | None = None) -> FastAPI:
     async def get_working(session_id: str):
         mem = _get_memory()
         assert mem.working is not None
-        entries = await mem.working.get(session_id)
-        return [e.model_dump(mode="json") for e in entries]
+        state = await mem.working.get(session_id)
+        return [e.model_dump(mode="json") for e in state.entries]
 
     @app.delete("/working/{session_id}")
     async def clear_working(session_id: str):
