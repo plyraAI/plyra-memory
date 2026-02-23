@@ -159,9 +159,7 @@ class SQLiteStore(StorageBackend):
         await self._conn.commit()
 
         # Initialise or check schema version
-        cursor = await self._conn.execute(
-            "SELECT version FROM schema_version LIMIT 1"
-        )
+        cursor = await self._conn.execute("SELECT version FROM schema_version LIMIT 1")
         row = await cursor.fetchone()
         if row is None:
             await self._conn.execute(

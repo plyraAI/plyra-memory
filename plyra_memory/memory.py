@@ -250,14 +250,10 @@ class Memory:
             recency_weight=self._config.default_recency_weight,
             importance_weight=self._config.default_importance_weight,
         )
-        result = await self._retrieval.recall(
-            request, query_embedding=query_embedding
-        )
+        result = await self._retrieval.recall(request, query_embedding=query_embedding)
 
         if self._config.cache_enabled:
-            await self._cache.set(
-                query, result, query_embedding=query_embedding
-            )
+            await self._cache.set(query, result, query_embedding=query_embedding)
 
         return result
 

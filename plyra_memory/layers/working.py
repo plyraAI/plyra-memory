@@ -35,7 +35,8 @@ class WorkingMemoryLayer:
             await self._store.delete_working_entry_by_id(lowest.id)
             log.debug(
                 "evicted entry %s (importance=%.2f)",
-                lowest.id, lowest.importance,
+                lowest.id,
+                lowest.importance,
             )
 
         return await self._store.save_working_entry(entry)

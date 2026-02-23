@@ -90,9 +90,7 @@ class SentenceTransformerEmbedder(Embedder):
             return cached
         self._load()
         loop = asyncio.get_event_loop()
-        embedding = await loop.run_in_executor(
-            None, lambda: self._model.encode(text)
-        )
+        embedding = await loop.run_in_executor(None, lambda: self._model.encode(text))
         result = embedding.tolist()
         self._cache_put(text, result)
         return result
