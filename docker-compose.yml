@@ -1,0 +1,14 @@
+services:
+  plyra-memory:
+    build: .
+    ports:
+      - "7700:7700"
+    volumes:
+      - plyra-data:/root/.plyra
+    environment:
+      PLYRA_ENV: development
+      PLYRA_LOG_LEVEL: INFO
+    command: ["plyra-memory", "serve", "--host", "0.0.0.0", "--port", "7700"]
+
+volumes:
+  plyra-data:

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>plyra-memory — Full Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:    #2dd4bf;
+  --teal-d:  #0d9488;
+  --indigo:  #818cf8;
+  --indigo-d:#6366f1;
+  --bg:      #0d1117;
+  --surface: #161b22;
+  --surface2:#1c2333;
+  --border:  #21262d;
+  --muted:   #5a7a96;
+  --text:    #e6edf3;
+  --red:     #f85149;
+  --amber:   #d29922;
+  --green:   #3fb950;
+  --cyan:    #39c5cf;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:400;padding:48px 32px;overflow-x:hidden;}
+
+/* HEADER */
+.header{text-align:center;margin-bottom:72px;position:relative;}
+.header::after{content:'';position:absolute;bottom:-36px;left:50%;transform:translateX(-50%);width:60px;height:1px;background:var(--border);}
+.wordmark{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(32px,5vw,52px);color:var(--text);line-height:1.1;margin-bottom:10px;}
+.title em{color:var(--indigo);font-style:normal;}
+.tagline{font-size:13px;color:var(--muted);font-weight:300;letter-spacing:0.06em;}
+.version-row{display:flex;justify-content:center;gap:8px;margin-top:16px;}
+.vtag{font-family:'DM Mono',monospace;font-size:10px;padding:3px 10px;border-radius:2px;letter-spacing:0.1em;}
+.vtag.v1{background:#1a2a1a;color:var(--green);border:1px solid #2a4a2a;}
+.vtag.v2{background:#1a1a2a;color:var(--indigo);border:1px solid #2a2a4a;}
+.vtag.v3{background:#2a2010;color:var(--amber);border:1px solid #4a3a10;}
+
+/* SECTION */
+.sec{max-width:1380px;margin:0 auto 60px;}
+.sec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* GRID UTILS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:2px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;}
+.gfull{display:grid;grid-template-columns:1fr;gap:2px;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:22px;position:relative;overflow:hidden;}
+.card-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.card.teal   .card-accent{background:linear-gradient(90deg,var(--teal-d),var(--teal));}
+.card.indigo .card-accent{background:linear-gradient(90deg,var(--indigo-d),var(--indigo));}
+.card.green  .card-accent{background:linear-gradient(90deg,#1a7f37,var(--green));}
+.card.amber  .card-accent{background:linear-gradient(90deg,#9e6a03,var(--amber));}
+.card.red    .card-accent{background:linear-gradient(90deg,#b91c1c,var(--red));}
+.card.cyan   .card-accent{background:linear-gradient(90deg,#0e7490,var(--cyan));}
+
+.card-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;margin-top:4px;}
+.card.teal   .card-eyebrow{color:var(--teal);}
+.card.indigo .card-eyebrow{color:var(--indigo);}
+.card.green  .card-eyebrow{color:var(--green);}
+.card.amber  .card-eyebrow{color:var(--amber);}
+.card.red    .card-eyebrow{color:var(--red);}
+.card.cyan   .card-eyebrow{color:var(--cyan);}
+
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px;}
+.card-body{font-size:12px;color:var(--muted);font-weight:300;line-height:1.75;}
+.card-body strong{color:var(--text);font-weight:500;}
+.card-body code{font-family:'DM Mono',monospace;font-size:11px;color:var(--teal);background:#0d1117;padding:1px 5px;border-radius:2px;}
+.card-body .ci{color:var(--indigo);}
+.card-body .cg{color:var(--green);}
+.card-body .ca{color:var(--amber);}
+.card-body .cr{color:var(--red);}
+
+/* BADGES */
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.badge{font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;letter-spacing:0.08em;}
+.badge.req{background:#0d1f0d;color:var(--green);border:1px solid #1a3a1a;}
+.badge.opt{background:#0d0d1f;color:var(--indigo);border:1px solid #1a1a3a;}
+.badge.v2 {background:#1f1a0d;color:var(--amber);border:1px solid #3a2a0d;}
+.badge.new{background:#0d1a1f;color:var(--teal);border:1px solid #0d2a2a;}
+
+/* CODE BLOCKS */
+.code{background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:18px 20px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.85;overflow-x:auto;margin-top:10px;}
+.code .k {color:var(--indigo);}
+.code .s {color:var(--teal);}
+.code .c {color:#3d4f60;}
+.code .n {color:var(--text);}
+.code .p {color:var(--muted);}
+.code .fn{color:var(--amber);}
+.code .kw{color:var(--green);}
+.code .num{color:#f97316;}
+.code br+.c{display:block;}
+
+/* FLOW DIAGRAM */
+.flow-wrap{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:32px 36px;}
+.flow-row{display:flex;align-items:stretch;margin-bottom:0;}
+.flow-lbl{width:108px;flex-shrink:0;padding-right:16px;display:flex;align-items:center;justify-content:flex-end;}
+.flow-lbl span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);text-align:right;}
+.flow-body{flex:1;border-left:1px solid var(--border);padding:14px 0 14px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.fnode{border:1px solid var(--border);border-radius:2px;padding:9px 13px;background:var(--surface2);text-align:center;white-space:nowrap;}
+.fnode .ft{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;display:block;}
+.fnode .fs{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;display:block;margin-top:2px;}
+.fnode.t{border-color:var(--teal-d);} .fnode.t .ft{color:var(--teal);}
+.fnode.i{border-color:var(--indigo-d);} .fnode.i .ft{color:var(--indigo);}
+.fnode.g{border-color:#238636;} .fnode.g .ft{color:var(--green);}
+.fnode.a{border-color:#9e6a03;} .fnode.a .ft{color:var(--amber);}
+.fnode.r{border-color:#6e2020;} .fnode.r .ft{color:var(--red);}
+.farrow{color:var(--muted);font-size:13px;padding:0 2px;flex-shrink:0;}
+.fdiv{height:1px;background:var(--border);margin:0 0 0 124px;}
+.fconn{display:flex;align-items:center;justify-content:center;height:32px;margin-left:124px;position:relative;}
+.fconn::before{content:'';position:absolute;top:50%;left:0;right:0;border-top:1px dashed #21262d;}
+.fconn span{background:var(--surface);padding:0 10px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.1em;position:relative;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:11px;}
+.tbl th{padding:10px 14px;color:var(--muted);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:400;text-align:left;}
+.tbl td{padding:11px 14px;border-bottom:1px solid #191f2b;color:var(--text);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl td:first-child{color:var(--teal);background:var(--surface2);border-right:1px solid var(--border);}
+.tbl .g{color:var(--green);}
+.tbl .a{color:var(--amber);}
+.tbl .i{color:var(--indigo);}
+.tbl .r{color:var(--red);}
+.tbl .m{color:var(--muted);}
+.tbl .w{color:var(--text);}
+
+/* ENV STRIP */
+.env-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:2px;}
+.env-cell{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:14px 16px;text-align:center;}
+.env-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;}
+.env-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:0.1em;}
+.env-cell.local .env-name{color:var(--green);}
+.env-cell.di    .env-name{color:var(--teal);}
+.env-cell.qa    .env-name{color:var(--indigo);}
+.env-cell.pre   .env-name{color:var(--amber);}
+.env-cell.prod  .env-name{color:var(--red);}
+
+/* FOOTER */
+.footer{max-width:1380px;margin:48px auto 0;border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;}
+.footer-l{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.footer-l span{color:var(--teal);}
+.footer-r{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="wordmark">Plyra Open-Source Infrastructure · v0.1 Architecture</div>
+  <div class="title">plyra-<em>memory</em></div>
+  <div class="tagline">Persistent structured memory for agentic AI · All frameworks · All environments · Docker-native</div>
+  <div class="version-row">
+    <span class="vtag v1">v0.1 — All 6 frameworks · Chroma · FAISS · OpenAI Embed · Pinecone</span>
+    <span class="vtag v2">v0.2 — Guard compose · Weaviate · Qdrant · OTel</span>
+    <span class="vtag v3">v0.3 — Cohere · Datadog · Multi-agent swarm isolation</span>
+  </div>
+</div>
+
+<!-- SECTION 1: FULL SYSTEM FLOW -->
+<div class="sec">
+  <div class="sec-label">01 — Full System Architecture</div>
+  <div class="flow-wrap">
+    <div class="flow-row">
+      <div class="flow-lbl"><span>Agent<br>Clients</span></div>
+      <div class="flow-body">
+        <div class="fnode t"><span class="ft">LangGraph</span><span class="fs">memory_node</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode t"><span class="ft">AutoGen</span><span class="fs">MemoryHook</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode t"><span class="ft">CrewAI</span><span class="fs">MemoryTool</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode t"><span class="ft">LangChain</span><span class="fs">ChatMemory</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode t"><span class="ft">OpenAI SDK</span><span class="fs">MemoryAdapter</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode t"><span class="ft">Plain Python</span><span class="fs">Memory()</span></div>
+      </div>
+    </div>
+    <div class="fconn"><span>MemoryClient · transport auto-selected by PLYRA_ENV</span></div>
+    <div class="flow-row">
+      <div class="flow-lbl"><span>Transport</span></div>
+      <div class="flow-body">
+        <div class="fnode g"><span class="ft">In-Process</span><span class="fs">local / DI</span></div>
+        <div class="farrow">|</div>
+        <div class="fnode a"><span class="ft">TCP + msgpack</span><span class="fs">QA / staging</span></div>
+        <div class="farrow">|</div>
+        <div class="fnode i"><span class="ft">gRPC + protobuf</span><span class="fs">pre-prod / prod</span></div>
+        <div class="farrow">→</div>
+        <div class="fnode r" style="flex:1;min-width:0;"><span class="ft">Schema Validator (Pydantic v2) — every write gate</span><span class="fs">no untyped blobs ever enter the memory store</span></div>
+      </div>
+    </div>
+    <div class="fconn"><span>validated MemoryOp objects → STM Server core</span></div>
+    <div class="flow-row">
+      <div class="flow-lbl"><span>STM Server<br>Core</span></div>
+      <div class="flow-body" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:8px;">
+          <div class="fnode i" style="flex:1;"><span class="ft">WorkingMemory</span><span class="fs">session-scoped · size-bounded · auto-flush → episodic on session end</span></div>
+          <div class="fnode i" style="flex:1;"><span class="ft">EpisodicMemory</span><span class="fs">append-only · time-indexed · immutable · summarization trigger at N tokens</span></div>
+          <div class="fnode i" style="flex:1;"><span class="ft">SemanticMemory</span><span class="fs">fact store · confidence-scored · decay model · auto-promoted from episodic</span></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <div class="fnode g" style="flex:2;"><span class="ft">Hybrid Retrieval Engine</span><span class="fs">vector similarity + structured SQL filters + recency decay → score fusion → token-budget ranked context</span></div>
+          <div class="fnode a" style="flex:1;"><span class="ft">Semantic Cache</span><span class="fs">cosine sim · 30–73% LLM call reduction</span></div>
+          <div class="fnode a" style="flex:1;"><span class="ft">Consolidation Engine</span><span class="fs">episodic → semantic at N-access threshold</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="fconn"><span>StorageBackend ABC + VectorBackend ABC (pluggable)</span></div>
+    <div class="flow-row">
+      <div class="flow-lbl"><span>Storage</span></div>
+      <div class="flow-body">
+        <div class="fnode g"><span class="ft">SQLite</span><span class="fs">local · WAL · default</span></div>
+        <div class="farrow" style="color:#21262d;">||</div>
+        <div class="fnode i"><span class="ft">Postgres</span><span class="fs">staging · prod</span></div>
+        <div class="farrow">·</div>
+        <div class="fnode g"><span class="ft">Chroma</span><span class="fs">local vectors</span></div>
+        <div class="farrow">|</div>
+        <div class="fnode g"><span class="ft">FAISS</span><span class="fs">local · GPU</span></div>
+        <div class="farrow">|</div>
+        <div class="fnode i"><span class="ft">Pinecone</span><span class="fs">prod vectors</span></div>
+        <div class="farrow">·</div>
+        <div class="fnode g"><span class="ft">StdoutExporter</span><span class="fs">always on</span></div>
+        <div class="farrow">|</div>
+        <div class="fnode a"><span class="ft">OtelExporter</span><span class="fs">prod traces</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: DEPLOYMENT — Docker Compose Strategy -->
+<div class="sec">
+  <div class="sec-label">02 — Deployment Strategy (Docker Compose — Free, Zero-Infra, Works Everywhere)</div>
+  <div class="g3" style="margin-bottom:2px;">
+    <div class="card green">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Local / DI</div>
+      <div class="card-title">No Docker Needed</div>
+      <div class="card-body">
+        Memory runs <strong>in-process</strong> — same Python process as the agent.
+        Storage: <code>~/.plyra/memory.db</code> (SQLite WAL).
+        Vectors: Chroma local directory. No daemon, no port, no compose.
+        <br><br><strong>Start:</strong> <code>import plyra_memory</code>. Done.
+      </div>
+      <div class="badge-row"><span class="badge req">zero config</span><span class="badge req">zero latency</span></div>
+    </div>
+    <div class="card amber">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">QA / Pre-prod</div>
+      <div class="card-title">docker compose up</div>
+      <div class="card-body">
+        One command. Ships with the repo. Starts:
+        <br>• <strong>plyra-memory server</strong> (TCP :7700)
+        <br>• <strong>ChromaDB</strong> (HTTP :8000)
+        <br>• <strong>Postgres</strong> (:5432)
+        <br>• <strong>Dashboard</strong> (:8766)
+        <br><br>Agents point to <code>PLYRA_SERVER=tcp://localhost:7700</code>
+      </div>
+      <div class="badge-row"><span class="badge opt">docker compose up</span><span class="badge opt">one file</span></div>
+    </div>
+    <div class="card indigo">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Production</div>
+      <div class="card-title">K8s Sidecar</div>
+      <div class="card-body">
+        <code>plyraai/memory-server</code> Docker image as sidecar in agent pod.
+        gRPC on <code>localhost:7701</code>. Postgres + Pinecone as backends.
+        <br><br>Same Docker image used in compose and K8s — <strong>identical binary, different config</strong>.
+        No SPOF: sidecar is pod-local.
+      </div>
+      <div class="badge-row"><span class="badge v2">grpc sidecar</span><span class="badge v2">same image</span></div>
+    </div>
+  </div>
+
+  <!-- Docker Compose Files -->
+  <div class="g2" style="margin-top:2px;">
+    <div class="card teal">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">docker-compose.yml — QA / Staging</div>
+      <div class="card-title">Full Stack, One File</div>
+      <div class="code">
+<span class="c"># docker-compose.yml — ships in the plyra-memory repo</span><br>
+<span class="k">version</span><span class="p">:</span> <span class="s">"3.9"</span><br>
+<span class="k">services</span><span class="p">:</span><br><br>
+
+<span class="c">  # ── MEMORY SERVER ──────────────────────────</span><br>
+<span class="k">  memory-server</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="k">image</span><span class="p">:</span> <span class="s">plyraai/memory-server:latest</span><br>
+&nbsp;&nbsp;<span class="k">ports</span><span class="p">:</span> [<span class="s">"7700:7700"</span>, <span class="s">"8766:8766"</span>]<br>
+&nbsp;&nbsp;<span class="k">environment</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">PLYRA_ENV</span><span class="p">:</span> <span class="s">staging</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">STORE_URL</span><span class="p">:</span> <span class="s">postgresql://plyra:plyra@postgres:5432/memory</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">VECTORS_URL</span><span class="p">:</span> <span class="s">http://chroma:8000</span><br>
+&nbsp;&nbsp;<span class="k">depends_on</span><span class="p">:</span> [<span class="s">postgres</span>, <span class="s">chroma</span>]<br>
+&nbsp;&nbsp;<span class="k">healthcheck</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">test</span><span class="p">:</span> <span class="s">["CMD","plyra-memory","ping"]</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">interval</span><span class="p">:</span> <span class="s">10s</span><br><br>
+
+<span class="c">  # ── POSTGRES (structured store) ─────────────</span><br>
+<span class="k">  postgres</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="k">image</span><span class="p">:</span> <span class="s">postgres:16-alpine</span><br>
+&nbsp;&nbsp;<span class="k">environment</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">POSTGRES_USER</span><span class="p">:</span> <span class="s">plyra</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">POSTGRES_PASSWORD</span><span class="p">:</span> <span class="s">plyra</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">POSTGRES_DB</span><span class="p">:</span> <span class="s">memory</span><br>
+&nbsp;&nbsp;<span class="k">volumes</span><span class="p">:</span> [<span class="s">"pgdata:/var/lib/postgresql/data"</span>]<br><br>
+
+<span class="c">  # ── CHROMADB (vector store) ──────────────────</span><br>
+<span class="k">  chroma</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="k">image</span><span class="p">:</span> <span class="s">chromadb/chroma:latest</span><br>
+&nbsp;&nbsp;<span class="k">ports</span><span class="p">:</span> [<span class="s">"8000:8000"</span>]<br>
+&nbsp;&nbsp;<span class="k">volumes</span><span class="p">:</span> [<span class="s">"chromadata:/chroma/chroma"</span>]<br><br>
+
+<span class="k">volumes</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="n">pgdata</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="n">chromadata</span><span class="p">:</span>
+      </div>
+    </div>
+
+    <div class="card indigo">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">docker-compose.override.yml — Pinecone (Prod-like)</div>
+      <div class="card-title">Swap Vectors to Pinecone</div>
+      <div class="code">
+<span class="c"># docker-compose.override.yml</span><br>
+<span class="c"># docker compose -f docker-compose.yml \</span><br>
+<span class="c">#               -f docker-compose.override.yml up</span><br><br>
+
+<span class="k">services</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="k">memory-server</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">environment</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">PLYRA_ENV</span><span class="p">:</span> <span class="s">production</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">VECTORS_BACKEND</span><span class="p">:</span> <span class="s">pinecone</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">PINECONE_API_KEY</span><span class="p">:</span> <span class="s">${PINECONE_API_KEY}</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">PINECONE_INDEX</span><span class="p">:</span> <span class="s">plyra-memory</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">EMBEDDER</span><span class="p">:</span> <span class="s">openai</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">OPENAI_API_KEY</span><span class="p">:</span> <span class="s">${OPENAI_API_KEY}</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">GRPC_PORT</span><span class="p">:</span> <span class="s">7701</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">ports</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="s">"7701:7701"</span> <span class="c"># gRPC</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="s">"7700:7700"</span> <span class="c"># TCP fallback</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="s">"8766:8766"</span> <span class="c"># dashboard</span><br><br>
+
+<span class="c">  # Chroma not needed in prod — remove it</span><br>
+&nbsp;&nbsp;<span class="k">chroma</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">profiles</span><span class="p">:</span> [<span class="s">"local-only"</span>]
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: EXTERNAL CLIENTS TABLE -->
+<div class="sec">
+  <div class="sec-label">03 — All External Clients (What We Connect To)</div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="tbl">
+      <tr>
+        <th style="width:160px;">Client / System</th>
+        <th>Category</th>
+        <th>Protocol</th>
+        <th>v0.1 Config</th>
+        <th>Purpose</th>
+        <th>Ship</th>
+      </tr>
+      <tr>
+        <td>LangGraph</td>
+        <td class="w">Framework Adapter</td>
+        <td class="g">direct Python</td>
+        <td class="g">custom memory_node</td>
+        <td class="m">inject context before node · record episode after exit</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>AutoGen</td>
+        <td class="w">Framework Adapter</td>
+        <td class="g">direct Python</td>
+        <td class="g">pre/post message hooks</td>
+        <td class="m">shared team memory · per-agent working context</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>CrewAI</td>
+        <td class="w">Framework Adapter</td>
+        <td class="g">Tool interface</td>
+        <td class="g">MemoryTool registered to crew</td>
+        <td class="m">crew-shared episodic log + per-agent working mem</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>LangChain</td>
+        <td class="w">Framework Adapter</td>
+        <td class="g">BaseChatMemory</td>
+        <td class="g">drop-in for ConversationBufferMemory</td>
+        <td class="m">full LangChain ecosystem compatibility</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>OpenAI Agents SDK</td>
+        <td class="w">Framework Adapter</td>
+        <td class="g">function calling</td>
+        <td class="g">memory_read / memory_write tools</td>
+        <td class="m">native tool-use pattern for OAI agent loops</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>Plain Python</td>
+        <td class="w">Direct API</td>
+        <td class="g">Python import</td>
+        <td class="g">Memory() object · zero deps</td>
+        <td class="m">base class, all adapters extend this</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>ChromaDB</td>
+        <td class="i">Vector Store</td>
+        <td class="g">local file / HTTP</td>
+        <td class="g">chromadb Python client</td>
+        <td class="m">default local vector index · zero infra</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>FAISS</td>
+        <td class="i">Vector Store</td>
+        <td class="g">in-process C++</td>
+        <td class="g">faiss-cpu or faiss-gpu</td>
+        <td class="m">fast local ANN · GPU acceleration option</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>Pinecone</td>
+        <td class="i">Vector Store</td>
+        <td class="a">HTTPS REST</td>
+        <td class="a">PINECONE_API_KEY env var</td>
+        <td class="m">managed prod vectors · serverless billing</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>sentence-transformers</td>
+        <td class="a">Embedder</td>
+        <td class="g">in-process Python</td>
+        <td class="g">all-MiniLM-L6-v2 default</td>
+        <td class="m">local embedding · zero API key · CPU/GPU</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>OpenAI Embeddings</td>
+        <td class="a">Embedder</td>
+        <td class="a">HTTPS REST</td>
+        <td class="a">OPENAI_API_KEY env var</td>
+        <td class="m">text-embedding-3-small · 1536-dim · high quality</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>SQLite</td>
+        <td class="w">Structured Store</td>
+        <td class="g">local file</td>
+        <td class="g">~/.plyra/memory.db · WAL mode</td>
+        <td class="m">episodes, facts, sessions, metadata · zero infra</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>Postgres</td>
+        <td class="w">Structured Store</td>
+        <td class="a">TCP + pg wire</td>
+        <td class="a">STORE_URL env var · asyncpg driver</td>
+        <td class="m">staging and production structured store</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>StdoutExporter</td>
+        <td class="g">Observability</td>
+        <td class="g">stdout JSON</td>
+        <td class="g">always on · same as plyra-guard</td>
+        <td class="m">structured log every memory op · debug default</td>
+        <td class="g">v0.1</td>
+      </tr>
+      <tr>
+        <td>OpenTelemetry</td>
+        <td class="g">Observability</td>
+        <td class="i">gRPC / OTLP</td>
+        <td class="i">OTEL_EXPORTER_OTLP_ENDPOINT</td>
+        <td class="m">distributed tracing across agent swarms</td>
+        <td class="i">v0.2</td>
+      </tr>
+      <tr>
+        <td>plyra-guard</td>
+        <td class="r">Policy Gate</td>
+        <td class="i">direct Python</td>
+        <td class="i">Memory(policy="guard_policy.yaml")</td>
+        <td class="m">validates every write · blocks state poisoning</td>
+        <td class="i">v0.2</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 4: STM SERVER BUILD SPEC -->
+<div class="sec">
+  <div class="sec-label">04 — STM Server: How to Build It</div>
+  <div class="g2" style="margin-bottom:2px;">
+    <div class="card teal">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Server Internals — What Runs Inside</div>
+      <div class="card-title">plyra-memory serve</div>
+      <div class="code">
+<span class="c"># plyra_memory/server/app.py</span><br><br>
+
+<span class="k">class</span> <span class="fn">MemoryServer</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="c">"""Single server, three transport modes"""</span><br><br>
+
+&nbsp;&nbsp;<span class="k">def</span> <span class="fn">__init__</span><span class="p">(</span><span class="n">self</span>, <span class="n">config</span><span class="p">:</span> <span class="n">MemoryConfig</span><span class="p">):</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># Three memory layers</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">working</span>  <span class="p">=</span> <span class="fn">WorkingMemoryLayer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">episodic</span> <span class="p">=</span> <span class="fn">EpisodicMemoryLayer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">semantic</span> <span class="p">=</span> <span class="fn">SemanticMemoryLayer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># Storage + retrieval</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">store</span>    <span class="p">=</span> <span class="fn">build_store</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="n">store_url</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">vectors</span>  <span class="p">=</span> <span class="fn">build_vectors</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="n">vectors_url</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">embedder</span> <span class="p">=</span> <span class="fn">build_embedder</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="n">embedder</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">retrieval</span><span class="p">=</span> <span class="fn">HybridRetrievalEngine</span><span class="p">(</span><span class="n">self</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">cache</span>    <span class="p">=</span> <span class="fn">SemanticCache</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">validator</span><span class="p">=</span> <span class="fn">SchemaValidator</span><span class="p">()</span>  <span class="c"># Pydantic v2</span><br><br>
+
+&nbsp;&nbsp;<span class="k">async def</span> <span class="fn">handle</span><span class="p">(</span><span class="n">self</span>, <span class="n">op</span><span class="p">:</span> <span class="n">MemoryOp</span><span class="p">)</span> <span class="p">→</span> <span class="n">MemoryResult</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">op</span> <span class="p">=</span> <span class="n">self</span><span class="p">.</span><span class="n">validator</span><span class="p">.</span><span class="fn">validate</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>  <span class="c"># always first</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return await</span> <span class="n">self</span><span class="p">.</span><span class="n">router</span><span class="p">.</span><span class="fn">dispatch</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+      </div>
+    </div>
+
+    <div class="card indigo">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Transport Layer — Auto-Selected by PLYRA_ENV</div>
+      <div class="card-title">One Server Binary, Three Transports</div>
+      <div class="code">
+<span class="c"># plyra_memory/server/transport.py</span><br><br>
+
+<span class="k">def</span> <span class="fn">build_transport</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">MemoryConfig</span><span class="p">):</span><br>
+&nbsp;&nbsp;<span class="k">match</span> <span class="n">config</span><span class="p">.</span><span class="n">env</span><span class="p">:</span><br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">case</span> <span class="s">"local"</span> <span class="p">|</span> <span class="s">"di"</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># No server — embedded in caller process</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="fn">InProcessTransport</span><span class="p">()</span><br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">case</span> <span class="s">"staging"</span> <span class="p">|</span> <span class="s">"qa"</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># TCP server · msgpack wire · asyncio</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="fn">TcpTransport</span><span class="p">(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">host</span><span class="p">=</span><span class="n">config</span><span class="p">.</span><span class="n">host</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">port</span><span class="p">=</span><span class="num">7700</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">codec</span><span class="p">=</span><span class="fn">MsgpackCodec</span><span class="p">(),</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="p">)</span><br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">case</span> <span class="s">"preprod"</span> <span class="p">|</span> <span class="s">"production"</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># gRPC sidecar · protobuf · HTTP/2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="fn">GrpcTransport</span><span class="p">(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">port</span><span class="p">=</span><span class="num">7701</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">tls</span><span class="p">=</span><span class="n">config</span><span class="p">.</span><span class="n">tls_cert</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="p">)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wire Protocol -->
+  <div class="card" style="padding:0;overflow:hidden;margin-top:2px;">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);background:var(--surface2);">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Wire Protocol — All Transports</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">MemoryOp API — Identical Regardless of Transport</div>
+    </div>
+    <table class="tbl">
+      <tr>
+        <th>Operation</th>
+        <th>HTTP Equivalent</th>
+        <th>gRPC Method</th>
+        <th>Payload</th>
+        <th>Returns</th>
+      </tr>
+      <tr>
+        <td>working.add(entry)</td>
+        <td class="g">POST /working</td>
+        <td class="i">WorkingAdd</td>
+        <td class="m">WorkingEntry(content, session_id, metadata)</td>
+        <td class="w">WorkingEntryID</td>
+      </tr>
+      <tr>
+        <td>working.get(session)</td>
+        <td class="g">GET /working/{session_id}</td>
+        <td class="i">WorkingGet</td>
+        <td class="m">session_id: str</td>
+        <td class="w">List[WorkingEntry]</td>
+      </tr>
+      <tr>
+        <td>episodic.record(event)</td>
+        <td class="g">POST /episodes</td>
+        <td class="i">EpisodicRecord</td>
+        <td class="m">Episode(event, tool, result, session_id, ts)</td>
+        <td class="w">EpisodeID</td>
+      </tr>
+      <tr>
+        <td>semantic.learn(fact)</td>
+        <td class="g">PUT /facts</td>
+        <td class="i">SemanticLearn</td>
+        <td class="m">Fact(subject, predicate, object, confidence)</td>
+        <td class="w">FactID · upserted</td>
+      </tr>
+      <tr>
+        <td>recall(query)</td>
+        <td class="g">POST /recall</td>
+        <td class="i">Recall</td>
+        <td class="m">RecallRequest(query, layers, top_k, filters)</td>
+        <td class="w">List[RankedMemory]</td>
+      </tr>
+      <tr>
+        <td>context_for(query)</td>
+        <td class="g">POST /context</td>
+        <td class="i">ContextFor</td>
+        <td class="m">ContextRequest(query, token_budget, weights)</td>
+        <td class="w">str · prompt-ready</td>
+      </tr>
+      <tr>
+        <td>session.flush(id)</td>
+        <td class="g">DELETE /working/{id}</td>
+        <td class="i">SessionFlush</td>
+        <td class="m">session_id: str</td>
+        <td class="w">EpisodeIDs written</td>
+      </tr>
+      <tr>
+        <td>health.ping()</td>
+        <td class="g">GET /health</td>
+        <td class="i">Ping</td>
+        <td class="m">—</td>
+        <td class="w">pong · uptime · version</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 5: FRAMEWORK ADAPTERS -->
+<div class="sec">
+  <div class="sec-label">05 — Framework Adapter Pattern (All 6 · v0.1)</div>
+  <div class="g2" style="margin-bottom:2px;">
+    <div class="card teal">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">LangGraph Adapter</div>
+      <div class="card-title">custom memory_node — not a generic wrap</div>
+      <div class="code">
+<span class="c"># plyra_memory/adapters/langgraph.py</span><br><br>
+
+<span class="k">from</span> <span class="n">plyra_memory</span> <span class="k">import</span> <span class="n">Memory</span><br>
+<span class="k">from</span> <span class="n">langgraph.graph</span> <span class="k">import</span> <span class="n">StateGraph</span><br><br>
+
+<span class="k">def</span> <span class="fn">memory_node</span><span class="p">(</span><span class="n">memory</span><span class="p">:</span> <span class="n">Memory</span><span class="p">):</span><br>
+&nbsp;&nbsp;<span class="k">async def</span> <span class="fn">_node</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">dict</span><span class="p">):</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># inject context before LLM node runs</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">ctx</span> <span class="p">=</span> <span class="k">await</span> <span class="n">memory</span><span class="p">.</span><span class="fn">context_for</span><span class="p">(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">state</span><span class="p">[</span><span class="s">"messages"</span><span class="p">][</span><span class="p">-</span><span class="num">1</span><span class="p">].</span><span class="n">content</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">token_budget</span><span class="p">=</span><span class="num">1024</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="p">{</span><span class="s">"memory_context"</span><span class="p">:</span> <span class="n">ctx</span><span class="p">}</span><br><br>
+
+&nbsp;&nbsp;<span class="k">return</span> <span class="n">_node</span><br><br>
+
+<span class="c"># Usage</span><br>
+<span class="n">memory</span> <span class="p">=</span> <span class="fn">Memory</span><span class="p">()</span><br>
+<span class="n">graph</span><span class="p">.</span><span class="fn">add_node</span><span class="p">(</span><span class="s">"memory"</span><span class="p">,</span> <span class="fn">memory_node</span><span class="p">(</span><span class="n">memory</span><span class="p">))</span>
+      </div>
+    </div>
+
+    <div class="card indigo">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">AutoGen Adapter</div>
+      <div class="card-title">pre/post message hooks on ConversableAgent</div>
+      <div class="code">
+<span class="c"># plyra_memory/adapters/autogen.py</span><br><br>
+
+<span class="k">class</span> <span class="fn">MemoryHook</span><span class="p">:</span><br>
+&nbsp;&nbsp;<span class="k">def</span> <span class="fn">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">:</span> <span class="n">Memory</span><span class="p">):</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">self</span><span class="p">.</span><span class="n">memory</span> <span class="p">=</span> <span class="n">memory</span><br><br>
+
+&nbsp;&nbsp;<span class="k">async def</span> <span class="fn">on_message_received</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># inject memory before agent processes</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">ctx</span> <span class="p">=</span> <span class="k">await</span> <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="fn">context_for</span><span class="p">(</span><span class="n">msg</span><span class="p">.</span><span class="n">content</span><span class="p">)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">msg</span><span class="p">.</span><span class="n">context</span> <span class="p">=</span> <span class="n">ctx</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="n">msg</span><br><br>
+
+&nbsp;&nbsp;<span class="k">async def</span> <span class="fn">on_message_sent</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c"># record episode after agent responds</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">await</span> <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="n">episodic</span><span class="p">.</span><span class="fn">record</span><span class="p">(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">event</span><span class="p">=</span><span class="s">"agent_response"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">input</span><span class="p">=</span><span class="n">msg</span><span class="p">.</span><span class="n">content</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">output</span><span class="p">=</span><span class="n">response</span><span class="p">.</span><span class="n">content</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="p">)</span>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card green">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">CrewAI Adapter</div>
+      <div class="card-title">MemoryTool — registered to crew agents</div>
+      <div class="code">
+<span class="c"># plyra_memory/adapters/crewai.py</span><br><br>
+
+<span class="k">from</span> <span class="n">crewai_tools</span> <span class="k">import</span> <span class="n">BaseTool</span><br><br>
+
+<span class="k">class</span> <span class="fn">MemoryTool</span><span class="p">(</span><span class="n">BaseTool</span><span class="p">):</span><br>
+&nbsp;&nbsp;<span class="n">name</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"plyra_memory"</span><br>
+&nbsp;&nbsp;<span class="n">description</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"Read and write agent memory"</span><br><br>
+
+&nbsp;&nbsp;<span class="k">def</span> <span class="fn">_run</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span> <span class="p">→</span> <span class="n">str</span><span class="p">:</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="n">memory</span><span class="p">.</span><span class="fn">context_for</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><br><br>
+
+<span class="c"># Usage</span><br>
+<span class="n">agent</span> <span class="p">=</span> <span class="fn">Agent</span><span class="p">(</span><br>
+&nbsp;&nbsp;<span class="n">role</span><span class="p">=</span><span class="s">"Researcher"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="n">tools</span><span class="p">=[</span><span class="fn">MemoryTool</span><span class="p">(</span><span class="n">memory</span><span class="p">=</span><span class="n">shared_memory</span><span class="p">)]</span><br>
+<span class="p">)</span>
+      </div>
+    </div>
+
+    <div class="card amber">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">LangChain + OpenAI SDK Adapters</div>
+      <div class="card-title">Drop-in compatibility</div>
+      <div class="code">
+<span class="c"># LangChain — extends BaseChatMemory</span><br>
+<span class="k">from</span> <span class="n">plyra_memory.adapters.langchain</span> <span class="k">import</span> <span class="n">PlyraMemory</span><br><br>
+<span class="n">chain</span> <span class="p">=</span> <span class="fn">ConversationChain</span><span class="p">(</span><br>
+&nbsp;&nbsp;<span class="n">memory</span><span class="p">=</span><span class="fn">PlyraMemory</span><span class="p">()</span>  <span class="c"># drop-in</span><br>
+<span class="p">)</span><br><br>
+
+<span class="c"># OpenAI Agents SDK — tool-based pattern</span><br>
+<span class="k">from</span> <span class="n">plyra_memory.adapters.openai_agents</span> <span class="k">import</span> <span class="n">memory_tools</span><br><br>
+<span class="n">agent</span> <span class="p">=</span> <span class="fn">Agent</span><span class="p">(</span><br>
+&nbsp;&nbsp;<span class="n">name</span><span class="p">=</span><span class="s">"my-agent"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="n">tools</span><span class="p">=[</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">memory_tools</span><span class="p">.</span><span class="n">memory_read</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">memory_tools</span><span class="p">.</span><span class="n">memory_write</span><br>
+&nbsp;&nbsp;<span class="p">]</span><br>
+<span class="p">)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: ENVIRONMENT MATRIX -->
+<div class="sec">
+  <div class="sec-label">06 — Environment × Component Decision Matrix</div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table class="tbl">
+      <tr>
+        <th style="width:180px;">Component</th>
+        <th>Local</th>
+        <th>DI / Dev</th>
+        <th>QA</th>
+        <th>Pre-prod</th>
+        <th>Production</th>
+      </tr>
+      <tr>
+        <td>STM Mode</td>
+        <td class="g">In-Process</td>
+        <td class="g">In-Process</td>
+        <td class="a">TCP :7700</td>
+        <td class="a">TCP / gRPC</td>
+        <td class="i">gRPC Sidecar :7701</td>
+      </tr>
+      <tr>
+        <td>Deployment</td>
+        <td class="g">pip install</td>
+        <td class="g">pip install</td>
+        <td class="a">docker compose up</td>
+        <td class="a">docker compose up</td>
+        <td class="i">K8s sidecar</td>
+      </tr>
+      <tr>
+        <td>Structured Store</td>
+        <td class="g">SQLite WAL</td>
+        <td class="g">SQLite WAL</td>
+        <td class="a">Postgres (Docker)</td>
+        <td class="a">Postgres (managed)</td>
+        <td class="i">Postgres (pooled)</td>
+      </tr>
+      <tr>
+        <td>Vector Store</td>
+        <td class="g">Chroma local</td>
+        <td class="g">Chroma local</td>
+        <td class="a">Chroma HTTP (Docker)</td>
+        <td class="a">Chroma / Pinecone</td>
+        <td class="i">Pinecone</td>
+      </tr>
+      <tr>
+        <td>Embedder</td>
+        <td class="g">sentence-transformers</td>
+        <td class="g">sentence-transformers</td>
+        <td class="a">OpenAI (optional)</td>
+        <td class="a">OpenAI</td>
+        <td class="i">OpenAI</td>
+      </tr>
+      <tr>
+        <td>FAISS</td>
+        <td class="g">optional (GPU)</td>
+        <td class="g">optional</td>
+        <td class="m">—</td>
+        <td class="m">—</td>
+        <td class="m">—</td>
+      </tr>
+      <tr>
+        <td>Semantic Cache</td>
+        <td class="g">in-memory dict</td>
+        <td class="g">in-memory dict</td>
+        <td class="a">in-memory</td>
+        <td class="a">in-memory</td>
+        <td class="i">in-proc per sidecar</td>
+      </tr>
+      <tr>
+        <td>Observability</td>
+        <td class="g">Stdout JSON</td>
+        <td class="g">Stdout JSON</td>
+        <td class="a">Stdout + Otel</td>
+        <td class="a">Otel traces</td>
+        <td class="i">Otel + Datadog</td>
+      </tr>
+      <tr>
+        <td>Dashboard</td>
+        <td class="g">localhost:8766</td>
+        <td class="g">localhost:8766</td>
+        <td class="a">docker :8766</td>
+        <td class="a">hosted</td>
+        <td class="i">hosted + auth</td>
+      </tr>
+      <tr>
+        <td>plyra-guard compose</td>
+        <td class="m">off</td>
+        <td class="g">optional</td>
+        <td class="a">on</td>
+        <td class="a">on</td>
+        <td class="i">enforced</td>
+      </tr>
+      <tr>
+        <td>Config Source</td>
+        <td class="g">zero / defaults</td>
+        <td class="g">plyra_memory.yaml</td>
+        <td class="a">.env + yaml</td>
+        <td class="a">.env + yaml</td>
+        <td class="i">K8s ConfigMap + Secrets</td>
+      </tr>
+      <tr>
+        <td>PLYRA_ENV value</td>
+        <td class="g">local</td>
+        <td class="g">di</td>
+        <td class="a">staging</td>
+        <td class="a">preprod</td>
+        <td class="i">production</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 7: THE SINGLE ENV VAR -->
+<div class="sec">
+  <div class="sec-label">07 — PLYRA_ENV: One Variable Drives Everything</div>
+  <div class="g2">
+    <div class="card teal">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Config Resolution</div>
+      <div class="card-title">No code changes between environments</div>
+      <div class="code">
+<span class="c"># plyra_memory/config.py</span><br><br>
+
+<span class="k">class</span> <span class="fn">MemoryConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span><br>
+&nbsp;&nbsp;<span class="n">env</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"local"</span>  <span class="c"># PLYRA_ENV</span><br><br>
+
+&nbsp;&nbsp;<span class="c"># auto-resolved from PLYRA_ENV</span><br>
+&nbsp;&nbsp;<span class="n">store_url</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"~/.plyra/memory.db"</span><br>
+&nbsp;&nbsp;<span class="n">vectors_url</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"chroma-local"</span><br>
+&nbsp;&nbsp;<span class="n">embedder</span><span class="p">:</span> <span class="n">str</span> <span class="p">=</span> <span class="s">"sentence-transformers"</span><br>
+&nbsp;&nbsp;<span class="n">server_url</span><span class="p">:</span> <span class="n">str</span> <span class="p">|</span> <span class="n">None</span> <span class="p">=</span> <span class="n">None</span><br><br>
+
+&nbsp;&nbsp;<span class="k">model_config</span> <span class="p">=</span> <span class="fn">SettingsConfigDict</span><span class="p">(</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">env_prefix</span><span class="p">=</span><span class="s">"PLYRA_"</span><span class="p">,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="n">env_file</span><span class="p">=</span><span class="s">".env"</span><br>
+&nbsp;&nbsp;<span class="p">)</span><br><br>
+
+<span class="c"># .env.local</span><br>
+<span class="kw">PLYRA_ENV</span><span class="p">=</span><span class="s">local</span><br><br>
+<span class="c"># .env.staging</span><br>
+<span class="kw">PLYRA_ENV</span><span class="p">=</span><span class="s">staging</span><br>
+<span class="kw">PLYRA_SERVER_URL</span><span class="p">=</span><span class="s">tcp://memory-server:7700</span><br>
+<span class="kw">PLYRA_STORE_URL</span><span class="p">=</span><span class="s">postgresql://plyra:plyra@postgres/memory</span>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-accent"></div>
+      <div class="card-eyebrow">Client Auto-Connect</div>
+      <div class="card-title">Agent code never changes</div>
+      <div class="code">
+<span class="c"># This is THE ONLY CODE an agent ever writes.</span><br>
+<span class="c"># Works local, DI, QA, preprod, prod.</span><br><br>
+
+<span class="k">from</span> <span class="n">plyra_memory</span> <span class="k">import</span> <span class="n">Memory</span><br><br>
+<span class="n">memory</span> <span class="p">=</span> <span class="fn">Memory</span><span class="p">()</span><br>
+<span class="c"># ↑ reads PLYRA_ENV, auto-selects transport,</span><br>
+<span class="c">#   auto-selects backends, connects or embeds.</span><br>
+<span class="c">#   Identical across all 5 environments.</span><br><br>
+
+<span class="c"># working memory</span><br>
+<span class="k">await</span> <span class="n">memory</span><span class="p">.</span><span class="n">working</span><span class="p">.</span><span class="fn">add</span><span class="p">(</span><span class="s">"user is debugging pipeline"</span><span class="p">)</span><br><br>
+
+<span class="c"># episodic log</span><br>
+<span class="k">await</span> <span class="n">memory</span><span class="p">.</span><span class="n">episodic</span><span class="p">.</span><span class="fn">record</span><span class="p">(</span><br>
+&nbsp;&nbsp;<span class="n">event</span><span class="p">=</span><span class="s">"tool_call"</span><span class="p">,</span> <span class="n">tool</span><span class="p">=</span><span class="s">"web_search"</span><span class="p">,</span> <span class="n">result</span><span class="p">=</span><span class="s">"ok"</span><br>
+<span class="p">)</span><br><br>
+
+<span class="c"># semantic fact</span><br>
+<span class="k">await</span> <span class="n">memory</span><span class="p">.</span><span class="n">semantic</span><span class="p">.</span><span class="fn">learn</span><span class="p">(</span><span class="s">"user prefers Python"</span><span class="p">)</span><br><br>
+
+<span class="c"># hybrid retrieval → prompt-ready context</span><br>
+<span class="n">ctx</span> <span class="p">=</span> <span class="k">await</span> <span class="n">memory</span><span class="p">.</span><span class="fn">context_for</span><span class="p">(</span><br>
+&nbsp;&nbsp;<span class="s">"help debug my LangGraph pipeline"</span><span class="p">,</span><br>
+&nbsp;&nbsp;<span class="n">token_budget</span><span class="p">=</span><span class="num">2048</span><br>
+<span class="p">)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-l"><span>plyra-memory</span> · v0.1 Architecture · Apache 2.0</div>
+  <div class="footer-r">plyraai.github.io · @plyraAI · oss@plyra.dev</div>
+</div>
+
+</body>
+</html>

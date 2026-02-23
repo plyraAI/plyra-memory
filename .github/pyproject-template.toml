@@ -1,0 +1,69 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "plyra-{name}"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+authors = [{ name = "Plyra", email = "oss@plyra.dev" }]
+keywords = ["ai", "agents", "llm", "agentic-ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "typing-extensions",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-asyncio",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://plyraai.github.io"
+Documentation = "https://plyraai.github.io/plyra-{name}"
+Repository = "https://github.com/plyraAI/plyra-{name}"
+Issues = "https://github.com/plyraAI/plyra-{name}/issues"
+
+# ── HATCH ONLY — never mix with setuptools ──
+[tool.hatch.build.targets.wheel]
+packages = ["plyra_{name}"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/tests", "/docs", "/examples", ".gitignore"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+disallow_untyped_defs = false
+disable_error_code = ["import-untyped"]

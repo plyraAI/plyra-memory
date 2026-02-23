@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "plyra-memory"
+version = "0.1.0"
+description = "Persistent structured memory for agentic AI"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+authors = [{ name = "Plyra", email = "oss@plyra.dev" }]
+keywords = ["ai", "agents", "llm", "agentic-ai", "memory", "rag"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "pyyaml>=6.0",
+    "typing-extensions",
+    "aiosqlite>=0.19",
+    "click>=8.0",
+    "uvicorn>=0.27",
+    "fastapi>=0.109",
+    "rich>=13.0",
+    "sentence-transformers>=2.7",
+    "chromadb>=0.5",
+    "openai>=2.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-asyncio",
+    "ruff",
+    "mypy",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+plyra-memory = "plyra_memory.cli:cli"
+
+[project.urls]
+Homepage = "https://plyraai.github.io"
+Documentation = "https://plyraai.github.io/plyra-memory"
+Repository = "https://github.com/plyraAI/plyra-memory"
+Issues = "https://github.com/plyraAI/plyra-memory/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["plyra_memory"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["/.github", "/tests", "/docs", "/examples", ".gitignore"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+disallow_untyped_defs = false
+disable_error_code = ["import-untyped"]
+
+[dependency-groups]
+dev = [
+    "truststore>=0.10.4",
+]

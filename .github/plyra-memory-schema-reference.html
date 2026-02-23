@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>plyra-memory — Schema Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:#2dd4bf;--teal-d:#0d9488;--indigo:#818cf8;--indigo-d:#6366f1;
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2333;--border:#21262d;
+  --muted:#5a7a96;--text:#e6edf3;--red:#f85149;--amber:#d29922;--green:#3fb950;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;padding:48px 28px;min-height:100vh;}
+
+.header{text-align:center;margin-bottom:64px;}
+.wordmark{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.title{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,4vw,44px);margin-bottom:6px;}
+.title em{color:var(--indigo);font-style:normal;}
+.sub{font-size:13px;color:var(--muted);font-weight:300;}
+
+.sec{max-width:1380px;margin:0 auto 56px;}
+.sec-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* SCHEMA CARD */
+.schema-grid{display:grid;gap:2px;}
+.schema-grid.cols2{grid-template-columns:1fr 1fr;}
+.schema-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.scard-head{padding:16px 20px 14px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:baseline;gap:12px;}
+.scard-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;}
+.scard-type{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;padding:2px 8px;border-radius:2px;}
+
+.teal .scard-name{color:var(--teal);}
+.teal .scard-type{color:var(--teal);background:#051a19;border:1px solid #0d3330;}
+.indigo .scard-name{color:var(--indigo);}
+.indigo .scard-type{color:var(--indigo);background:#0d0d20;border:1px solid #1a1a40;}
+.green .scard-name{color:var(--green);}
+.green .scard-type{color:var(--green);background:#051205;border:1px solid #0d2a10;}
+.amber .scard-name{color:var(--amber);}
+.amber .scard-type{color:var(--amber);background:#1a1200;border:1px solid #3a2800;}
+.red .scard-name{color:var(--red);}
+.red .scard-type{color:var(--red);background:#1a0505;border:1px solid #3a0d0d;}
+.cyan .scard-name{color:#39c5cf;}
+.cyan .scard-type{color:#39c5cf;background:#051215;border:1px solid #0d2a30;}
+
+.scard-note{padding:10px 20px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:300;font-style:italic;line-height:1.6;}
+
+/* FIELD TABLE */
+.ftbl{width:100%;border-collapse:collapse;}
+.ftbl th{padding:7px 16px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);text-align:left;border-bottom:1px solid var(--border);font-weight:400;}
+.ftbl td{padding:8px 16px;font-family:'DM Mono',monospace;font-size:11px;border-bottom:1px solid #191f2b;vertical-align:top;}
+.ftbl tr:last-child td{border-bottom:none;}
+.fn{color:var(--text);font-weight:500;}
+.ft{color:var(--indigo);}
+.fd{color:var(--muted);font-size:10px;}
+.fr{color:var(--red);}    /* required */
+.fo{color:var(--green);}  /* optional */
+.fk{color:var(--amber);}  /* computed */
+.fv{color:var(--teal);}   /* validated */
+
+/* ENUM GRID */
+.enum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:2px;}
+.enum-card{background:var(--surface);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.enum-head{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.enum-name{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--text);}
+.enum-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;}
+.enum-body{padding:10px 16px;}
+.enum-val{display:flex;align-items:center;gap:8px;padding:3px 0;font-family:'DM Mono',monospace;font-size:11px;}
+.enum-val .ev{color:var(--teal);min-width:160px;}
+.enum-val .ec{color:var(--muted);font-size:10px;}
+
+/* LIFECYCLE */
+.lifecycle{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:24px 28px;}
+.lc-row{display:flex;align-items:flex-start;gap:0;margin-bottom:0;}
+.lc-step{display:flex;align-items:flex-start;gap:12px;flex:1;}
+.lc-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;flex-shrink:0;margin-top:1px;}
+.teal .lc-num{background:#051a19;color:var(--teal);border:1px solid var(--teal-d);}
+.indigo .lc-num{background:#0d0d20;color:var(--indigo);border:1px solid var(--indigo-d);}
+.green .lc-num{background:#051205;color:var(--green);border:1px solid #238636;}
+.lc-text{}
+.lc-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.lc-desc{font-size:11px;color:var(--muted);font-weight:300;line-height:1.6;}
+.lc-arr{color:var(--muted);font-size:18px;padding:0 12px;flex-shrink:0;margin-top:3px;}
+
+/* DECAY FORMULA */
+.formula-box{background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:16px 20px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:center;margin-top:12px;line-height:2;}
+.formula-box .fm{font-size:16px;color:var(--teal);}
+.formula-box .fl{font-size:11px;color:var(--muted);}
+
+/* LEGEND */
+.legend{display:flex;gap:20px;flex-wrap:wrap;padding:14px 20px;background:var(--surface2);border-top:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;}
+.ldot{width:8px;height:8px;border-radius:50%;}
+
+.footer{max-width:1380px;margin:48px auto 0;border-top:1px solid var(--border);padding-top:22px;display:flex;justify-content:space-between;}
+.footer span{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.footer span em{color:var(--teal);font-style:normal;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="wordmark">plyra-memory · schema.py</div>
+  <div class="title">Pydantic Schema <em>Reference</em></div>
+  <div class="sub">Every data shape in plyra-memory · single source of truth · no untyped dicts cross a layer boundary</div>
+</div>
+
+<!-- SECTION 1: CORE MODELS -->
+<div class="sec">
+  <div class="sec-lbl">01 — Core Data Models</div>
+
+  <!-- Session -->
+  <div class="schema-grid cols2" style="margin-bottom:2px;">
+    <div class="scard teal">
+      <div class="scard-head"><span class="scard-name">Session</span><span class="scard-type">Mutable · Base</span></div>
+      <div class="scard-note">A bounded interaction context. Working memory is session-scoped. Auto-created on Memory() init. Flushed on end().</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">id</td><td class="ft">str</td><td class="fo">opt</td><td class="fd">UUID4 hex, auto-generated</td></tr>
+        <tr><td class="fn">agent_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Identifier of the owning agent</td></tr>
+        <tr><td class="fn">user_id</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">End-user ID if applicable</td></tr>
+        <tr><td class="fn">created_at</td><td class="ft">datetime</td><td class="fo">opt</td><td class="fd">UTC, auto-set</td></tr>
+        <tr><td class="fn">ended_at</td><td class="ft">datetime | None</td><td class="fo">opt</td><td class="fd">Set by session.end()</td></tr>
+        <tr><td class="fn">framework</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">langgraph | autogen | crewai | langchain | openai | python</td></tr>
+        <tr><td class="fn">metadata</td><td class="ft">dict</td><td class="fo">opt</td><td class="fd">Arbitrary key-value bag</td></tr>
+        <tr><td class="fn">is_active</td><td class="ft">bool</td><td class="fk">comp</td><td class="fd">Computed: ended_at is None</td></tr>
+      </table>
+    </div>
+
+    <!-- WorkingEntry -->
+    <div class="scard indigo">
+      <div class="scard-head"><span class="scard-name">WorkingEntry</span><span class="scard-type">Mutable · Working Layer</span></div>
+      <div class="scard-note">One item in the agent's immediate awareness. Session-scoped, size-bounded. Evicted by importance (lowest first) when at capacity.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">id</td><td class="ft">str</td><td class="fo">opt</td><td class="fd">UUID4 hex, auto-generated</td></tr>
+        <tr><td class="fn">session_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Parent Session.id</td></tr>
+        <tr><td class="fn">content</td><td class="ft">str</td><td class="fr">req</td><td class="fd">1–8,000 chars. Auto-stripped.</td></tr>
+        <tr><td class="fn">importance</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">0.0–1.0, default 0.5. Drives eviction order.</td></tr>
+        <tr><td class="fn">source</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">tool_output | user_message | agent_thought | injection</td></tr>
+        <tr><td class="fn">created_at</td><td class="ft">datetime</td><td class="fo">opt</td><td class="fd">UTC, auto-set</td></tr>
+        <tr><td class="fn">metadata</td><td class="ft">dict</td><td class="fo">opt</td><td class="fd">Arbitrary key-value bag</td></tr>
+        <tr><td class="fn">importance_level</td><td class="ft">ImportanceLevel</td><td class="fk">comp</td><td class="fd">CRITICAL / HIGH / MEDIUM / LOW / NOISE</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Episode -->
+  <div class="schema-grid" style="margin-bottom:2px;">
+    <div class="scard green">
+      <div class="scard-head"><span class="scard-name">Episode</span><span class="scard-type">Immutable · Episodic Layer · frozen=True</span></div>
+      <div class="scard-note">Single immutable event in the episodic log — the ship's log. Append-only, never edited. tool_name is required for TOOL_* events. Auto-promoted to Fact when access_count ≥ config.promotion_threshold.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">id</td><td class="ft">str</td><td class="fo">opt</td><td class="fd">UUID4 hex, auto-generated</td></tr>
+        <tr><td class="fn">session_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Parent Session.id</td></tr>
+        <tr><td class="fn">agent_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Agent that created this event</td></tr>
+        <tr><td class="fn">event</td><td class="ft">EpisodeEvent</td><td class="fr">req</td><td class="fd">Standardised event type enum</td></tr>
+        <tr><td class="fn">content</td><td class="ft">str</td><td class="fr">req</td><td class="fd">1–32,000 chars. Free-text description of what happened.</td></tr>
+        <tr><td class="fn">tool_name</td><td class="ft">str | None</td><td class="fv">cond</td><td class="fd">Required when event is TOOL_CALL / TOOL_RESULT / TOOL_ERROR</td></tr>
+        <tr><td class="fn">tool_input</td><td class="ft">dict | None</td><td class="fo">opt</td><td class="fd">Serialized tool input arguments</td></tr>
+        <tr><td class="fn">tool_output</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Serialized tool result</td></tr>
+        <tr><td class="fn">tool_error</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Error message if tool failed</td></tr>
+        <tr><td class="fn">importance</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">0.0–1.0, default from config.episodic_default_importance</td></tr>
+        <tr><td class="fn">access_count</td><td class="ft">int</td><td class="fo">opt</td><td class="fd">Incremented on every recall hit. Drives promotion.</td></tr>
+        <tr><td class="fn">sequence_num</td><td class="ft">int</td><td class="fo">opt</td><td class="fd">Monotonic counter within session. Preserves ordering.</td></tr>
+        <tr><td class="fn">promoted</td><td class="ft">bool</td><td class="fo">opt</td><td class="fd">True once promoted to semantic memory</td></tr>
+        <tr><td class="fn">promoted_to</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Fact.id that was created from this episode</td></tr>
+        <tr><td class="fn">created_at</td><td class="ft">datetime</td><td class="fo">opt</td><td class="fd">UTC, auto-set. Immutable after creation.</td></tr>
+        <tr><td class="fn">importance_level</td><td class="ft">ImportanceLevel</td><td class="fk">comp</td><td class="fd">Derived from importance float</td></tr>
+        <tr><td class="fn">is_tool_event</td><td class="ft">bool</td><td class="fk">comp</td><td class="fd">True for TOOL_CALL | TOOL_RESULT | TOOL_ERROR</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Fact -->
+  <div class="schema-grid" style="margin-bottom:2px;">
+    <div class="scard amber">
+      <div class="scard-head"><span class="scard-name">Fact</span><span class="scard-type">Mutable · Semantic Layer</span></div>
+      <div class="scard-note">Discrete durable knowledge as a subject → predicate → object triple. Deduplicated on (agent_id, subject_lower, predicate) fingerprint. Decay score computed at read-time via exponential decay — never stored.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">id</td><td class="ft">str</td><td class="fo">opt</td><td class="fd">UUID4 hex, auto-generated</td></tr>
+        <tr><td class="fn">agent_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Owning agent</td></tr>
+        <tr><td class="fn">user_id</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Scopes fact to a specific user</td></tr>
+        <tr><td class="fn">subject</td><td class="ft">str</td><td class="fr">req</td><td class="fd">1–500 chars. e.g. "user", "project", "system"</td></tr>
+        <tr><td class="fn">predicate</td><td class="ft">FactRelation</td><td class="fr">req</td><td class="fd">Relation type from FactRelation enum</td></tr>
+        <tr><td class="fn">object</td><td class="ft">str</td><td class="fr">req</td><td class="fd">1–2,000 chars. The fact value.</td></tr>
+        <tr><td class="fn">content</td><td class="ft">str</td><td class="fo">opt</td><td class="fd">Auto-built: "{subject} {predicate} {object}". Used for embedding.</td></tr>
+        <tr><td class="fn">confidence</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">0.0–1.0, default 0.8. Updated on re-confirmation.</td></tr>
+        <tr><td class="fn">importance</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">0.0–1.0, default 0.5</td></tr>
+        <tr><td class="fn">access_count</td><td class="ft">int</td><td class="fo">opt</td><td class="fd">Incremented on every recall hit</td></tr>
+        <tr><td class="fn">last_accessed</td><td class="ft">datetime</td><td class="fo">opt</td><td class="fd">Updated on access — drives decay computation</td></tr>
+        <tr><td class="fn">last_confirmed</td><td class="ft">datetime</td><td class="fo">opt</td><td class="fd">Updated when fact is reconfirmed by agent</td></tr>
+        <tr><td class="fn">ttl_days</td><td class="ft">int | None</td><td class="fo">opt</td><td class="fd">None = never expires. Set for transient facts.</td></tr>
+        <tr><td class="fn">source_episode_id</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Which Episode triggered this fact</td></tr>
+        <tr><td class="fn">fingerprint</td><td class="ft">str</td><td class="fk">comp</td><td class="fd">SHA256[:16] of (agent_id:subject_lower:predicate) — dedup key</td></tr>
+        <tr><td class="fn">decay_score</td><td class="ft">float</td><td class="fk">comp</td><td class="fd">confidence × e^(−λ × days_since_access). Never stored.</td></tr>
+        <tr><td class="fn">is_expired</td><td class="ft">bool</td><td class="fk">comp</td><td class="fd">True if ttl_days is set and exceeded</td></tr>
+        <tr><td class="fn">importance_level</td><td class="ft">ImportanceLevel</td><td class="fk">comp</td><td class="fd">Derived from importance float</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: RETRIEVAL MODELS -->
+<div class="sec">
+  <div class="sec-lbl">02 — Retrieval Models</div>
+  <div class="schema-grid cols2" style="margin-bottom:2px;">
+    <div class="scard teal">
+      <div class="scard-head"><span class="scard-name">RecallRequest</span><span class="scard-type">Input · memory.recall()</span></div>
+      <div class="scard-note">Fusion weights must sum to 1.0 — validated by model_validator. Searches all three layers by default.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">query</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Natural language query for retrieval</td></tr>
+        <tr><td class="fn">session_id</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Scopes working + episodic results</td></tr>
+        <tr><td class="fn">agent_id</td><td class="ft">str | None</td><td class="fo">opt</td><td class="fd">Scopes all results to agent</td></tr>
+        <tr><td class="fn">layers</td><td class="ft">list[MemoryLayer]</td><td class="fo">opt</td><td class="fd">Default: all three layers</td></tr>
+        <tr><td class="fn">top_k</td><td class="ft">int</td><td class="fo">opt</td><td class="fd">1–100, default 10</td></tr>
+        <tr><td class="fn">similarity_weight</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Default 0.5 — vector similarity contribution</td></tr>
+        <tr><td class="fn">recency_weight</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Default 0.3 — recency contribution</td></tr>
+        <tr><td class="fn">importance_weight</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Default 0.2 — importance contribution</td></tr>
+        <tr><td class="fn">min_score</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Filter: minimum fused score to include in results</td></tr>
+      </table>
+    </div>
+    <div class="scard indigo">
+      <div class="scard-head"><span class="scard-name">RecallResult</span><span class="scard-type">Output · Immutable</span></div>
+      <div class="scard-note">Full response from recall(). Computed fields split results by layer for easy access. cache_hit indicates semantic cache was used.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">query</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Original query for reference</td></tr>
+        <tr><td class="fn">results</td><td class="ft">list[RankedMemory]</td><td class="fr">req</td><td class="fd">Fused, sorted by score descending</td></tr>
+        <tr><td class="fn">total_found</td><td class="ft">int</td><td class="fr">req</td><td class="fd">Total before top_k truncation</td></tr>
+        <tr><td class="fn">layers_searched</td><td class="ft">list[MemoryLayer]</td><td class="fr">req</td><td class="fd">Which layers were queried</td></tr>
+        <tr><td class="fn">cache_hit</td><td class="ft">bool</td><td class="fo">opt</td><td class="fd">True if semantic cache served this result</td></tr>
+        <tr><td class="fn">latency_ms</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Total retrieval time</td></tr>
+        <tr><td class="fn">working_results</td><td class="ft">list[RankedMemory]</td><td class="fk">comp</td><td class="fd">Filter: only WORKING layer results</td></tr>
+        <tr><td class="fn">episodic_results</td><td class="ft">list[RankedMemory]</td><td class="fk">comp</td><td class="fd">Filter: only EPISODIC layer results</td></tr>
+        <tr><td class="fn">semantic_results</td><td class="ft">list[RankedMemory]</td><td class="fk">comp</td><td class="fd">Filter: only SEMANTIC layer results</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="schema-grid cols2">
+    <div class="scard green">
+      <div class="scard-head"><span class="scard-name">RankedMemory</span><span class="scard-type">Immutable · Single Result Item</span></div>
+      <div class="scard-note">One memory item from any layer, with its fused rank score broken out into component scores for debugging and tuning.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">RankedMemory record ID</td></tr>
+        <tr><td class="fn">layer</td><td class="ft">MemoryLayer</td><td class="fr">req</td><td class="fd">Which layer this came from</td></tr>
+        <tr><td class="fn">content</td><td class="ft">str</td><td class="fr">req</td><td class="fd">The memory content for injection</td></tr>
+        <tr><td class="fn">score</td><td class="ft">float</td><td class="fr">req</td><td class="fd">0.0–1.0 fused rank score</td></tr>
+        <tr><td class="fn">similarity</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Raw vector cosine similarity</td></tr>
+        <tr><td class="fn">recency</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Normalised recency score</td></tr>
+        <tr><td class="fn">importance</td><td class="ft">float</td><td class="fo">opt</td><td class="fd">Raw importance value from source model</td></tr>
+        <tr><td class="fn">source_id</td><td class="ft">str</td><td class="fr">req</td><td class="fd">WorkingEntry.id | Episode.id | Fact.id</td></tr>
+        <tr><td class="fn">created_at</td><td class="ft">datetime</td><td class="fr">req</td><td class="fd">Original creation time of source record</td></tr>
+      </table>
+    </div>
+    <div class="scard amber">
+      <div class="scard-head"><span class="scard-name">ContextRequest / ContextResult</span><span class="scard-type">memory.context_for()</span></div>
+      <div class="scard-note">The highest-level API. context_for() runs recall(), ranks, truncates to token_budget, and returns a prompt-ready string. budget_used_pct helps adapters decide if budget was sufficient.</div>
+      <table class="ftbl">
+        <tr><th>Field</th><th>Type</th><th>Req</th><th>Notes</th></tr>
+        <tr><td class="fn">query</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Natural language query</td></tr>
+        <tr><td class="fn">token_budget</td><td class="ft">int</td><td class="fo">opt</td><td class="fd">64–32,000. Default from config.</td></tr>
+        <tr><td class="fn">layers</td><td class="ft">list[MemoryLayer]</td><td class="fo">opt</td><td class="fd">Which layers to search</td></tr>
+        <tr><td class="fn">format</td><td class="ft">Literal[...]</td><td class="fo">opt</td><td class="fd">string | messages | dict</td></tr>
+        <tr><td class="fn">— result —</td><td class="ft"></td><td></td><td></td></tr>
+        <tr><td class="fn">content</td><td class="ft">str</td><td class="fr">req</td><td class="fd">Prompt-ready, within token_budget</td></tr>
+        <tr><td class="fn">token_count</td><td class="ft">int</td><td class="fr">req</td><td class="fd">Estimated tokens used</td></tr>
+        <tr><td class="fn">memories_used</td><td class="ft">int</td><td class="fr">req</td><td class="fd">How many RankedMemory items contributed</td></tr>
+        <tr><td class="fn">budget_used_pct</td><td class="ft">float</td><td class="fk">comp</td><td class="fd">token_count / token_budget × 100</td></tr>
+        <tr><td class="fn">cache_hit</td><td class="ft">bool</td><td class="fo">opt</td><td class="fd">Semantic cache served this result</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: ENUMS -->
+<div class="sec">
+  <div class="sec-lbl">03 — Enums</div>
+  <div class="enum-grid">
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">MemoryLayer</div><div class="enum-sub">Which cognitive layer</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">WORKING</span><span class="ec">session-scoped, ephemeral</span></div>
+        <div class="enum-val"><span class="ev">EPISODIC</span><span class="ec">append-only event log</span></div>
+        <div class="enum-val"><span class="ev">SEMANTIC</span><span class="ec">durable fact store</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">ImportanceLevel</div><div class="enum-sub">Derived from importance float</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">CRITICAL</span><span class="ec">0.9 – 1.0</span></div>
+        <div class="enum-val"><span class="ev">HIGH</span><span class="ec">0.7 – 0.9</span></div>
+        <div class="enum-val"><span class="ev">MEDIUM</span><span class="ec">0.4 – 0.7</span></div>
+        <div class="enum-val"><span class="ev">LOW</span><span class="ec">0.1 – 0.4</span></div>
+        <div class="enum-val"><span class="ev">NOISE</span><span class="ec">0.0 – 0.1 · evicted first</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">EpisodeEvent</div><div class="enum-sub">Standardised event vocabulary</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">TOOL_CALL</span><span class="ec">agent invoked a tool</span></div>
+        <div class="enum-val"><span class="ev">TOOL_RESULT</span><span class="ec">tool returned successfully</span></div>
+        <div class="enum-val"><span class="ev">TOOL_ERROR</span><span class="ec">tool failed</span></div>
+        <div class="enum-val"><span class="ev">USER_MESSAGE</span><span class="ec">user sent a message</span></div>
+        <div class="enum-val"><span class="ev">AGENT_RESPONSE</span><span class="ec">agent responded</span></div>
+        <div class="enum-val"><span class="ev">PLAN_CREATED</span><span class="ec">agent made a plan</span></div>
+        <div class="enum-val"><span class="ev">PLAN_STEP</span><span class="ec">plan step executed</span></div>
+        <div class="enum-val"><span class="ev">SESSION_START/END</span><span class="ec">session lifecycle</span></div>
+        <div class="enum-val"><span class="ev">MEMORY_PROMOTED</span><span class="ec">layer promotion event</span></div>
+        <div class="enum-val"><span class="ev">POLICY_BLOCK</span><span class="ec">plyra-guard blocked op</span></div>
+        <div class="enum-val"><span class="ev">CUSTOM</span><span class="ec">escape hatch</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">FactRelation</div><div class="enum-sub">Subject → Predicate → Object</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">PREFERS / DISLIKES</span><span class="ec">preferences</span></div>
+        <div class="enum-val"><span class="ev">IS / HAS</span><span class="ec">identity / possession</span></div>
+        <div class="enum-val"><span class="ev">KNOWS / USES</span><span class="ec">knowledge / tools</span></div>
+        <div class="enum-val"><span class="ev">WORKS_ON</span><span class="ec">current focus</span></div>
+        <div class="enum-val"><span class="ev">LOCATED_IN</span><span class="ec">geography / context</span></div>
+        <div class="enum-val"><span class="ev">BELONGS_TO</span><span class="ec">membership</span></div>
+        <div class="enum-val"><span class="ev">RELATED_TO</span><span class="ec">general relation</span></div>
+        <div class="enum-val"><span class="ev">LEARNED_FROM</span><span class="ec">provenance</span></div>
+        <div class="enum-val"><span class="ev">CUSTOM</span><span class="ec">escape hatch</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">PlyraEnv</div><div class="enum-sub">PLYRA_ENV values</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">local</span><span class="ec">in-process + SQLite + Chroma</span></div>
+        <div class="enum-val"><span class="ev">di</span><span class="ec">same as local, CI-friendly</span></div>
+        <div class="enum-val"><span class="ev">staging</span><span class="ec">TCP server + Postgres + Chroma</span></div>
+        <div class="enum-val"><span class="ev">preprod</span><span class="ec">TCP/gRPC + managed Postgres</span></div>
+        <div class="enum-val"><span class="ev">production</span><span class="ec">gRPC sidecar + Pinecone</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-head"><div class="enum-name">MemoryOpType</div><div class="enum-sub">STM server wire operations</div></div>
+      <div class="enum-body">
+        <div class="enum-val"><span class="ev">working.add/get/clear</span><span class="ec">working layer ops</span></div>
+        <div class="enum-val"><span class="ev">episodic.record/query</span><span class="ec">episodic log ops</span></div>
+        <div class="enum-val"><span class="ev">semantic.learn/forget/query</span><span class="ec">fact store ops</span></div>
+        <div class="enum-val"><span class="ev">recall</span><span class="ec">hybrid search</span></div>
+        <div class="enum-val"><span class="ev">context_for</span><span class="ec">prompt injection</span></div>
+        <div class="enum-val"><span class="ev">session.flush</span><span class="ec">working → episodic</span></div>
+        <div class="enum-val"><span class="ev">health.ping</span><span class="ec">healthcheck</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SECTION 4: LIFECYCLE + DECAY -->
+<div class="sec">
+  <div class="sec-lbl">04 — Memory Lifecycle &amp; Decay Formula</div>
+  <div class="schema-grid cols2" style="margin-bottom:2px;">
+
+    <div class="scard teal">
+      <div class="scard-head"><span class="scard-name">Memory Promotion Lifecycle</span><span class="scard-type">Auto-consolidation mechanic</span></div>
+      <div class="scard-note">No existing memory system implements this. Episodic events auto-promote to durable semantic facts when retrieved frequently enough.</div>
+      <div style="padding:20px;">
+        <div class="lc-row" style="display:flex;gap:0;align-items:flex-start;">
+          <div class="lc-step teal">
+            <div class="lc-num">1</div>
+            <div class="lc-text"><div class="lc-title">Agent acts</div><div class="lc-desc">Tool call, user message, or thought is created. Written as WorkingEntry with session_id.</div></div>
+          </div>
+          <div class="lc-arr">→</div>
+          <div class="lc-step teal">
+            <div class="lc-num">2</div>
+            <div class="lc-text"><div class="lc-title">Session ends</div><div class="lc-desc">session.flush() moves all WorkingEntry items into the EpisodicLayer as Episode records. Working memory cleared.</div></div>
+          </div>
+        </div>
+        <div style="height:16px;"></div>
+        <div class="lc-row" style="display:flex;gap:0;align-items:flex-start;">
+          <div class="lc-step green">
+            <div class="lc-num">3</div>
+            <div class="lc-text"><div class="lc-title">Recall increments access_count</div><div class="lc-desc">Every time recall() returns an Episode, its access_count is incremented atomically in storage.</div></div>
+          </div>
+          <div class="lc-arr">→</div>
+          <div class="lc-step green">
+            <div class="lc-num">4</div>
+            <div class="lc-text"><div class="lc-title">Promotion triggered</div><div class="lc-desc">When access_count ≥ config.promotion_threshold (default 3), ConsolidationEngine creates a Fact from the Episode content and marks promoted=True.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scard amber">
+      <div class="scard-head"><span class="scard-name">Fact Decay Model</span><span class="scard-type">Computed at read time · never stored</span></div>
+      <div class="scard-note">Decay is computed on every read, not persisted. This means no background jobs, no stale values, and zero storage overhead. Decay never fully destroys a fact — floor is 0.01.</div>
+      <div style="padding:20px;">
+        <div class="formula-box">
+          <div class="fm">decay_score = confidence × e<sup>−λ · days_since_access</sup></div>
+          <br>
+          <div class="fl">λ = 0.05 (config.semantic_decay_lambda)</div>
+          <div class="fl">→ half-life ≈ 14 days at default λ</div>
+          <div class="fl">→ clamped to [0.01, 1.0]</div>
+          <div class="fl">→ facts never fully disappear</div>
+        </div>
+        <div style="height:16px;"></div>
+        <div class="lc-step amber" style="display:flex;gap:12px;margin-top:4px;">
+          <div class="lc-num" style="background:#1f1200;color:var(--amber);border:1px solid #9e6a03;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:10px;flex-shrink:0;margin-top:0;">↺</div>
+          <div class="lc-text"><div class="lc-title">Re-accessing resets the clock</div><div class="lc-desc">Every recall() hit updates last_accessed. A frequently-accessed fact never decays. An ignored fact slowly becomes irrelevant — but retrievable if needed.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SECTION 5: CONFIG KEY FIELDS -->
+<div class="sec">
+  <div class="sec-lbl">05 — MemoryConfig Key Fields (PLYRA_ env vars)</div>
+  <div class="scard cyan">
+    <div class="scard-head"><span class="scard-name">MemoryConfig</span><span class="scard-type">pydantic-settings · PLYRA_ prefix · .env file</span></div>
+    <div class="scard-note">Auto-populated from environment variables. Zero-config defaults work for local/DI with no env vars set. transport computed_field derives InProcess/TCP/gRPC from server_url.</div>
+    <table class="ftbl">
+      <tr><th>Env Var</th><th>Field</th><th>Default</th><th>Notes</th></tr>
+      <tr><td class="fn">PLYRA_ENV</td><td class="ft">env: PlyraEnv</td><td class="fd">local</td><td class="fd">Drives transport + backend defaults</td></tr>
+      <tr><td class="fn">PLYRA_SERVER_URL</td><td class="ft">server_url: str | None</td><td class="fd">None (in-process)</td><td class="fd">tcp://host:7700 or grpc://host:7701</td></tr>
+      <tr><td class="fn">PLYRA_STORE_URL</td><td class="ft">store_url: str</td><td class="fd">~/.plyra/memory.db</td><td class="fd">SQLite path or postgresql://...</td></tr>
+      <tr><td class="fn">PLYRA_VECTORS_URL</td><td class="ft">vectors_url: str</td><td class="fd">~/.plyra/memory.index</td><td class="fd">Chroma dir or http://chroma:8000</td></tr>
+      <tr><td class="fn">PLYRA_EMBEDDER</td><td class="ft">embedder: EmbedderType</td><td class="fd">sentence-transformers</td><td class="fd">or openai</td></tr>
+      <tr><td class="fn">PLYRA_OPENAI_API_KEY</td><td class="ft">openai_api_key: str | None</td><td class="fd">None</td><td class="fd">Required if embedder=openai</td></tr>
+      <tr><td class="fn">PLYRA_PINECONE_API_KEY</td><td class="ft">pinecone_api_key: str | None</td><td class="fd">None</td><td class="fd">Required if vectors_backend=pinecone</td></tr>
+      <tr><td class="fn">PLYRA_PINECONE_INDEX</td><td class="ft">pinecone_index: str | None</td><td class="fd">None</td><td class="fd">Required if vectors_backend=pinecone</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">working_max_entries: int</td><td class="fd">50</td><td class="fd">Max items before eviction</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">promotion_threshold: int</td><td class="fd">3</td><td class="fd">access_count before episodic → semantic</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">semantic_decay_lambda: float</td><td class="fd">0.05</td><td class="fd">Decay rate · half-life ≈ 14 days</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">cache_similarity_threshold</td><td class="fd">0.92</td><td class="fd">Cosine sim for semantic cache hit</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">default_token_budget: int</td><td class="fd">2048</td><td class="fd">context_for() default token cap</td></tr>
+      <tr><td class="fn">(no env var needed)</td><td class="ft">transport: TransportType</td><td class="fk">comp</td><td class="fd">Derived from server_url: IN_PROCESS | TCP | GRPC</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="sec" style="margin-bottom:0;">
+  <div class="scard" style="padding:0;overflow:hidden;">
+    <div class="legend">
+      <div class="legend-item"><div class="ldot" style="background:var(--red);"></div><span class="fr">req — required field</span></div>
+      <div class="legend-item"><div class="ldot" style="background:var(--green);"></div><span class="fo">opt — optional, has default</span></div>
+      <div class="legend-item"><div class="ldot" style="background:var(--amber);"></div><span class="fk">comp — computed_field, never stored</span></div>
+      <div class="legend-item"><div class="ldot" style="background:var(--teal);"></div><span class="fv">cond — conditionally required (model_validator)</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span><em>plyra-memory</em> · schema.py · Apache 2.0</span>
+  <span>plyraai.github.io · @plyraAI</span>
+</div>
+
+</body>
+</html>
