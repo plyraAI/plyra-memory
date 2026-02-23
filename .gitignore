@@ -67,3 +67,6 @@ Thumbs.db
 uv.lock
 
 *.db
+
+smoke3.log
+test_env/
