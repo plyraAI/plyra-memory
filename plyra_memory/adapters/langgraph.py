@@ -61,3 +61,15 @@ async def remember_node(state: dict[str, Any], *, memory: Any) -> dict[str, Any]
     if content:
         await memory.remember(content, event=event, source=role)
     return state
+
+
+def create_memory_nodes(memory: Any) -> tuple[Any, Any]:
+    """Return (context_node, remember_node) bound to the provided memory instance."""
+    import functools
+
+    return functools.partial(context_node, memory=memory), functools.partial(
+        remember_node, memory=memory
+    )
+
+
+memory_node = context_node  # Alias for backward compatibility or single node users

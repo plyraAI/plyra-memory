@@ -83,3 +83,17 @@ def get_openai_tools(memory: Any) -> list[dict[str, Any]]:
             },
         },
     ]
+
+
+def create_memory_tools(memory: Any) -> list[Any]:
+    """Return callable tools bound to memory for Agent SDK usage."""
+    import functools
+
+    return [
+        functools.partial(memory_recall, memory=memory),
+        functools.partial(memory_remember, memory=memory),
+    ]
+
+
+memory_recall = context_tool
+memory_remember = remember_tool
