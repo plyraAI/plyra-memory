@@ -4,8 +4,9 @@ Activated when PLYRA_SERVER_URL is set.
 Proxies all Memory operations to a plyra-memory-server instance.
 """
 from __future__ import annotations
-import os
+
 import httpx
+
 from ..schema import ContextResult, RecallResult
 
 
@@ -77,7 +78,6 @@ class HTTPMemoryBackend:
         )
         resp.raise_for_status()
         data = resp.json()
-        from ..schema import _utcnow
 
         return ContextResult(
             query=data["query"],
@@ -102,7 +102,7 @@ class HTTPMemoryBackend:
         )
         resp.raise_for_status()
         data = resp.json()
-        from ..schema import RankedMemory, MemoryLayer, _utcnow
+        from ..schema import MemoryLayer, RankedMemory
 
         results = []
         for r in data.get("results", []):

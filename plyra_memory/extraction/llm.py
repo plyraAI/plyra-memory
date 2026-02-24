@@ -16,13 +16,16 @@ from .regex import RegexExtractor
 
 logger = logging.getLogger(__name__)
 
-EXTRACT_PROMPT = """You are a fact extraction engine. Extract structured facts from the user's message.
+EXTRACT_PROMPT = """You are a fact extraction engine. Extract structured facts
+from the user's message.
 
 Rules:
 - Only extract facts the user states about themselves (subject = "user")
 - Only extract clear, explicit statements — not implications or guesses
-- Use ONLY these predicates: is, prefers, dislikes, uses, works_on, belongs_to, located_in, knows, has, related_to
-- Confidence: 0.95 for very explicit ("my name is X"), 0.8 for clear ("I prefer X"), 0.7 for implied
+- Use ONLY these predicates: is, prefers, dislikes, uses, works_on, belongs_to,
+  located_in, knows, has, related_to
+- Confidence: 0.95 for very explicit ("my name is X"), 0.8 for clear
+  ("I prefer X"), 0.7 for implied
 - Return ONLY valid JSON. No explanation. No markdown. No preamble.
 - If no facts, return: {{"facts": []}}
 
@@ -30,7 +33,7 @@ Output format:
 {{
   "facts": [
     {{"subject": "user", "predicate": "is", "object": "Alex", "confidence": 0.95}},
-    {{"subject": "user", "predicate": "prefers", "object": "Python", "confidence": 0.88}}
+    {{"subject": "user", "predicate": "prefers", "object": "Python", "confidence": 0.8}}
   ]
 }}
 

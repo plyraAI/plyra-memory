@@ -179,10 +179,6 @@ class Memory:
         )
         self._cache = SemanticCache(self._embedder, self._config)
 
-        # Route to HTTP backend if in server mode
-        if self._use_http:
-            return await self._http_backend.recall(query, top_k)
-
 
         # Create or resume session
         existing = await self._store.get_session(self._session_id)
@@ -375,7 +371,11 @@ class Memory:
                 # Create Fact object from extracted data
                 fact = Fact(
                     agent_id=self._agent_id,
-                    content=f"{kwargs['subject']} {kwargs['predicate'].value} {kwargs['object_']}",
+                    content=(
+                        f"{kwargs['subject']} "
+                        f"{kwargs['predicate'].value} "
+                        f"{kwargs['object_']}"
+                    ),
                     subject=kwargs['subject'],
                     predicate=kwargs['predicate'],
                     object=kwargs['object_'],
@@ -455,7 +455,8 @@ class Memory:
         config: MemoryConfig | None = None,
         **kwargs,
     ) -> Memory:
-        """Convenience constructor with Anthropic client for extraction + summarization."""
+        """Convenience constructor with Anthropic client for extraction + summarization.
+        """
         import anthropic
 
         from plyra_memory.extraction.llm import LLMExtractor

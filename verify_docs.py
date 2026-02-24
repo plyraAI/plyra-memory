@@ -1,4 +1,6 @@
-import os, re
+import os
+import re
+
 docs_dir = 'docs'
 all_md = []
 for root, _, files in os.walk(docs_dir):

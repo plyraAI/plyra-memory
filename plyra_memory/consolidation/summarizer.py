@@ -20,11 +20,11 @@ from ..vectors.base import VectorBackend
 
 logger = logging.getLogger(__name__)
 
-SUMMARIZE_PROMPT = """Summarize the following conversation episodes into a single, 
+SUMMARIZE_PROMPT = """Summarize the following conversation episodes into a single,
 dense paragraph that captures all key information, decisions, preferences, and facts.
 Focus on what would be most useful to remember for future conversations.
 Be specific. Include names, technologies, preferences, and project details.
-Do not include filler phrases like "The conversation covered..." — just state the facts directly.
+Do not include filler phrases like "The conversation covered..." — just state facts.
 
 Episodes to summarize:
 {episodes_text}

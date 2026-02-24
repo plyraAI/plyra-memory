@@ -48,9 +48,10 @@ class MemoryTool:
             loop = None
 
         if loop and loop.is_running():
-            # If called from an async testing script, bridge using run_coroutine_threadsafe.
-            # But we must do it on a distinct thread that runs its own loop, OR just return what we can.
-            # Easiest way to bypass in a test is nest_asyncio, or just direct thread execution.
+            # If called from an async testing script, bridge using
+            # run_coroutine_threadsafe. But we must do it on a distinct thread that
+            # runs its own loop, OR just return what we can.
+            # Easiest way to bypass in a test is direct thread execution.
 
             def _thread_worker() -> str:
                 return asyncio.run(self.arun(query))
