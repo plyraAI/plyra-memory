@@ -220,7 +220,8 @@ class TestExtractAndLearn:
             assert isinstance(facts, list)
 
     async def test_remember_routes_facts(self, mem_config, mock_embedder, mock_vectors):
-        """remember() returns extracted facts from _extract_and_learn."""
+        """remember() extracts facts asynchronously and saves them."""
+        import asyncio
         async with Memory(
             config=mem_config,
             agent_id="test",
@@ -228,5 +229,10 @@ class TestExtractAndLearn:
             vectors=mock_vectors,
         ) as mem:
             result = await mem.remember("my name is Bob")
-            assert len(result["facts"]) >= 1
-            assert isinstance(result["facts"][0], Fact)
+            assert result["facts"] == []
+
+            if mem._bg_tasks:
+                await asyncio.gather(*mem._bg_tasks)
+
+            search = await mem.semantic.search("name")
+            assert len(search) >= 1

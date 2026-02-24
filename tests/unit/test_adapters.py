@@ -164,7 +164,7 @@ class TestLangChain:
             vectors=mock_vectors,
         ) as mem:
             lc = PlyraMemory(mem)
-            assert lc.memory_variables == ["memory_context"]
+            assert lc.memory_variables == ["history"]
 
     async def test_aload_empty_query(self, adapter_config, mock_embedder, mock_vectors):
         async with Memory(
@@ -174,7 +174,7 @@ class TestLangChain:
         ) as mem:
             lc = PlyraMemory(mem)
             result = await lc.aload_memory_variables({})
-            assert result == {"memory_context": ""}
+            assert result == {"history": ""}
 
     async def test_aload_with_input(self, adapter_config, mock_embedder, mock_vectors):
         async with Memory(
@@ -184,7 +184,7 @@ class TestLangChain:
         ) as mem:
             lc = PlyraMemory(mem)
             result = await lc.aload_memory_variables({"input": "hello"})
-            assert "memory_context" in result
+            assert "history" in result
 
     async def test_asave_context_remembers_both(
         self, adapter_config, mock_embedder, mock_vectors

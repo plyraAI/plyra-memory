@@ -87,22 +87,22 @@ class TestHybridRetrieval:
         result = await retrieval.recall(req)
         assert len(result.results) > 0
 
-    def test_cosine_similarity_identical(self):
+    async def test_cosine_similarity_identical(self):
         a = [1.0, 0.0, 0.0]
         b = [1.0, 0.0, 0.0]
         assert HybridRetrieval.cosine_similarity(a, b) == pytest.approx(1.0)
 
-    def test_cosine_similarity_orthogonal(self):
+    async def test_cosine_similarity_orthogonal(self):
         a = [1.0, 0.0]
         b = [0.0, 1.0]
         assert HybridRetrieval.cosine_similarity(a, b) == pytest.approx(0.0)
 
-    def test_cosine_similarity_zero_vector(self):
+    async def test_cosine_similarity_zero_vector(self):
         a = [0.0, 0.0]
         b = [1.0, 0.0]
         assert HybridRetrieval.cosine_similarity(a, b) == 0.0
 
-    def test_recency_score(self):
+    async def test_recency_score(self):
         from datetime import datetime
 
         now = datetime.now(UTC)
