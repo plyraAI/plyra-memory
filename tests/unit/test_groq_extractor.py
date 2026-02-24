@@ -17,7 +17,10 @@ class MockGroqClient:
     class _Completions:
         async def create(self, **kwargs):
             class _Message:
-                content = '{"facts": [{"subject": "user", "predicate": "prefers", "object": "Groq", "confidence": 0.9}]}'
+                content = (
+                    '{"facts": [{"subject": "user", "predicate": "prefers", '
+                    '"object": "Groq", "confidence": 0.9}]}'
+                )
 
             class _Choice:
                 message = _Message()
@@ -71,10 +74,14 @@ async def test_groq_falls_back_on_error():
     class FailingGroqClient:
         base_url = "https://api.groq.com/openai/v1"
 
-        class chat:
-            class completions:
-                async def create(**kwargs):
+        class _Chat:
+            class _Completions:
+                async def create(self, **kwargs):
                     raise ConnectionError("Groq API unreachable")
+
+            completions = _Completions()
+
+        chat = _Chat()
 
     extractor = LLMExtractor(FailingGroqClient(), model="llama-3.1-8b-instant")
     extractor._is_async = True

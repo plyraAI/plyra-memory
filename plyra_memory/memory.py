@@ -152,7 +152,8 @@ class Memory:
                     )
                 except ImportError:
                     log.warning(
-                        "GROQ_API_KEY set but openai package not installed — using regex"
+                        "GROQ_API_KEY set but openai package not installed "
+                        "— using regex"
                     )
 
             elif anthropic_key:
@@ -165,7 +166,8 @@ class Memory:
                     self._extractor = LLMExtractor(client)
                     self._llm_client = client
                     log.debug(
-                        "LLM extraction: Anthropic claude-haiku (from ANTHROPIC_API_KEY)"
+                        "LLM extraction: Anthropic claude-haiku "
+                        "(from ANTHROPIC_API_KEY)"
                     )
                 except ImportError:
                     log.warning(
@@ -562,8 +564,15 @@ class Memory:
         """
         Convenience constructor with Groq client for extraction + summarization.
 
+        Groq provides OpenAI-compatible API with free tier and fast inference.
+        llama-3.1-8b-instant: ~800 tokens/second, generous free tier.
+
         Usage:
             memory = Memory.with_groq(api_key="gsk_...")
+            memory = Memory.with_groq(
+                api_key="gsk_...",
+                model="llama-3.3-70b-versatile",  # smarter model
+            )
         """
         try:
             from openai import OpenAI
