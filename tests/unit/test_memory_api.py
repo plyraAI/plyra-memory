@@ -8,7 +8,6 @@ from plyra_memory import Memory, MemoryConfig
 from plyra_memory.schema import (
     Episode,
     EpisodeEvent,
-    Fact,
     FactRelation,
     WorkingEntry,
 )

@@ -42,6 +42,7 @@ dependencies = [
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.20"]
 openai = ["openai>=1.0"]
+groq = ["openai>=1.0"]   # Groq uses openai client with custom base_url
 dev = [
     "pytest>=7.0",
     "pytest-cov",

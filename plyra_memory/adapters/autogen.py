@@ -49,16 +49,16 @@ class MemoryHook:
     # Legacy aliases required by some tests
     async def before_reply(
         self, messages: list[dict[str, Any]]
-    ) -> tuple[bool, list[dict[str, Any]]]:
+    ) -> list[dict[str, Any]]:
         if not messages:
-            return False, messages
+            return messages
         last_msg = messages[-1].get("content", "")
         # Add context to messages
         ctx = await self.on_message(str(last_msg))
         messages.append(
             {"role": "system", "content": f"Memory Context: {ctx['memory_context']}"}
         )
-        return False, messages
+        return messages
 
     async def before_send(self, message: dict[str, Any]) -> dict[str, Any]:
         await self.on_response(str(message.get("content", "")))

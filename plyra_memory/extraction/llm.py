@@ -92,14 +92,26 @@ class LLMExtractor(BaseExtractor):
 
         # Auto-detect client type and set default model
         client_type = type(client).__module__
+        client_base_url = getattr(
+            getattr(client, "_client", None), "base_url", None
+        ) or getattr(client, "base_url", None)
+        is_groq = (
+            client_base_url is not None and "groq.com" in str(client_base_url)
+        ) or "groq" in client_type.lower()
+
         if model:
             self._model = model
+        elif is_groq:
+            self._model = "llama-3.1-8b-instant"
         elif "anthropic" in client_type:
             self._model = "claude-haiku-4-5-20251001"
         elif "openai" in client_type:
             self._model = "gpt-4o-mini"
         else:
-            self._model = model or "claude-haiku-4-5-20251001"
+            self._model = model or "llama-3.1-8b-instant"
+
+        # Store for use in summarizer
+        self._is_groq = is_groq
 
         # Detect if client is async
         self._is_async = "async" in type(client).__name__.lower() or hasattr(
@@ -108,9 +120,9 @@ class LLMExtractor(BaseExtractor):
 
         # Detect API style (anthropic vs openai)
         self._is_anthropic = hasattr(client, "messages") and not hasattr(client, "chat")
-        self._is_openai = hasattr(client, "chat") and hasattr(
-            client.chat, "completions"
-        )
+        self._is_openai = (
+            hasattr(client, "chat") and hasattr(client.chat, "completions")
+        ) or is_groq  # Groq uses identical OpenAI chat.completions interface
 
     async def extract(self, text: str, agent_id: str) -> list[dict]:
         """

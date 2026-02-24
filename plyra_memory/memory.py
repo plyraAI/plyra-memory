@@ -129,6 +129,64 @@ class Memory:
             self._store = SQLiteStore(self._config.store_url, self._config)
         await self._store.initialize()
 
+        # Auto-configure extractor from env vars if not explicitly provided
+        if self._extractor is None:
+            groq_key = getattr(self._config, "groq_api_key", None)
+            anthropic_key = getattr(self._config, "anthropic_api_key", None)
+            openai_key = getattr(self._config, "openai_api_key", None)
+
+            if groq_key:
+                try:
+                    from openai import OpenAI
+
+                    from .extraction.llm import LLMExtractor
+
+                    client = OpenAI(
+                        api_key=groq_key,
+                        base_url="https://api.groq.com/openai/v1",
+                    )
+                    self._extractor = LLMExtractor(client, model="llama-3.1-8b-instant")
+                    self._llm_client = client
+                    log.debug(
+                        "LLM extraction: Groq llama-3.1-8b-instant (from GROQ_API_KEY)"
+                    )
+                except ImportError:
+                    log.warning(
+                        "GROQ_API_KEY set but openai package not installed — using regex"
+                    )
+
+            elif anthropic_key:
+                try:
+                    import anthropic
+
+                    from .extraction.llm import LLMExtractor
+
+                    client = anthropic.Anthropic(api_key=anthropic_key)
+                    self._extractor = LLMExtractor(client)
+                    self._llm_client = client
+                    log.debug(
+                        "LLM extraction: Anthropic claude-haiku (from ANTHROPIC_API_KEY)"
+                    )
+                except ImportError:
+                    log.warning(
+                        "ANTHROPIC_API_KEY set but anthropic package not installed"
+                    )
+
+            elif openai_key:
+                try:
+                    from openai import OpenAI
+
+                    from .extraction.llm import LLMExtractor
+
+                    client = OpenAI(api_key=openai_key)
+                    self._extractor = LLMExtractor(client)
+                    self._llm_client = client
+                    log.debug(
+                        "LLM extraction: OpenAI gpt-4o-mini (from OPENAI_API_KEY)"
+                    )
+                except ImportError:
+                    log.warning("OPENAI_API_KEY set but openai package not installed")
+
         if self._injected_vectors is not None:
             self._vectors = self._injected_vectors
         else:
@@ -484,6 +542,43 @@ class Memory:
 
         client = openai.OpenAI(api_key=api_key)
         extractor = LLMExtractor(client)
+        return cls(
+            config=config,
+            agent_id=agent_id,
+            extractor=extractor,
+            llm_client=client,
+            **kwargs,
+        )
+
+    @classmethod
+    def with_groq(
+        cls,
+        api_key: str,
+        agent_id: str = "default-agent",
+        config: MemoryConfig | None = None,
+        model: str = "llama-3.1-8b-instant",
+        **kwargs,
+    ) -> Memory:
+        """
+        Convenience constructor with Groq client for extraction + summarization.
+
+        Usage:
+            memory = Memory.with_groq(api_key="gsk_...")
+        """
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError(
+                "openai package required for Groq support. "
+                "Install with: pip install openai"
+            )
+        from .extraction.llm import LLMExtractor
+
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
+        extractor = LLMExtractor(client, model=model)
         return cls(
             config=config,
             agent_id=agent_id,

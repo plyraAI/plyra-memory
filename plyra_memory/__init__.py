@@ -1,4 +1,8 @@
-"""plyra-memory – typed, three-layer cognitive memory for AI agents."""
+"""
+plyra-memory – typed, three-layer cognitive memory for AI agents.
+
+Features: Memory.with_groq() — Groq LLM extraction (llama-3.1-8b-instant)
+"""
 
 __version__ = "0.3.0"
 

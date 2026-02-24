@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from plyra_memory.schema import PlyraEnv
@@ -10,8 +11,14 @@ from plyra_memory.schema import PlyraEnv
 class MemoryConfig(BaseSettings):
     """Configuration for plyra-memory. All fields map to PLYRA_* env vars."""
 
+    # LLM extraction — checked in order: extractor param > env vars
+    groq_api_key: str | None = Field(None, alias="GROQ_API_KEY")
+    anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
+    openai_api_key: str | None = Field(None, alias="OPENAI_API_KEY")
+
     model_config = SettingsConfigDict(
         env_prefix="PLYRA_",
+        populate_by_name=True,
         env_file=".env",
         extra="ignore",
     )
