@@ -222,6 +222,7 @@ class TestExtractAndLearn:
     async def test_remember_routes_facts(self, mem_config, mock_embedder, mock_vectors):
         """remember() extracts facts asynchronously and saves them."""
         import asyncio
+
         async with Memory(
             config=mem_config,
             agent_id="test",
