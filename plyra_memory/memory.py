@@ -179,7 +179,6 @@ class Memory:
         )
         self._cache = SemanticCache(self._embedder, self._config)
 
-
         # Create or resume session
         existing = await self._store.get_session(self._session_id)
         if existing:
@@ -376,12 +375,12 @@ class Memory:
                         f"{kwargs['predicate'].value} "
                         f"{kwargs['object_']}"
                     ),
-                    subject=kwargs['subject'],
-                    predicate=kwargs['predicate'],
-                    object=kwargs['object_'],
-                    confidence=kwargs.get('confidence', 0.8),
-                    source_episode_id=kwargs.get('source_episode_id'),
-                    metadata=kwargs.get('metadata', {}),
+                    subject=kwargs["subject"],
+                    predicate=kwargs["predicate"],
+                    object=kwargs["object_"],
+                    confidence=kwargs.get("confidence", 0.8),
+                    source_episode_id=kwargs.get("source_episode_id"),
+                    metadata=kwargs.get("metadata", {}),
                 )
                 # Store the fact
                 result = await self.semantic.learn(fact)
@@ -455,8 +454,7 @@ class Memory:
         config: MemoryConfig | None = None,
         **kwargs,
     ) -> Memory:
-        """Convenience constructor with Anthropic client for extraction + summarization.
-        """
+        """Convenience constructor with Anthropic client for extraction + summarization."""
         import anthropic
 
         from plyra_memory.extraction.llm import LLMExtractor

@@ -3,6 +3,7 @@ HTTP backend for plyra-memory.
 Activated when PLYRA_SERVER_URL is set.
 Proxies all Memory operations to a plyra-memory-server instance.
 """
+
 from __future__ import annotations
 
 import httpx
