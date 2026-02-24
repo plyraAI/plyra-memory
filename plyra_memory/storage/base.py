@@ -66,6 +66,51 @@ class StorageBackend(ABC):
     @abstractmethod
     async def mark_episode_promoted(self, episode_id: str, fact_id: str) -> None: ...
 
+    @abstractmethod
+    async def get_episodes_for_promotion(
+        self,
+        agent_id: str,
+        min_access_count: int,
+        min_age_days: int,
+    ) -> list[Episode]:
+        """
+        Returns episodes that meet either promotion trigger:
+          - access_count >= min_access_count
+          - age in days >= min_age_days
+        Only returns episodes where promoted = False.
+        ORDER BY access_count DESC, created_at ASC
+        LIMIT 50 per call to avoid runaway promotion.
+        """
+
+    @abstractmethod
+    async def get_episodes_for_summarization(
+        self,
+        session_id: str,
+        threshold: int,
+    ) -> tuple[list[Episode], list[Episode]]:
+        """
+        Returns (recent_episodes, old_episodes) for a session.
+        Only called when total episode count for session >= threshold.
+        recent = created_at within last summarize_recent_days days, not summarized
+        old    = created_at older than summarize_recent_days days, not summarized
+        Both lists exclude already-promoted and already-summarized episodes.
+        """
+
+    @abstractmethod
+    async def delete_episodes_by_ids(self, episode_ids: list[str]) -> int:
+        """
+        Bulk delete episodes by id list.
+        Returns count deleted.
+        Also deletes their vector embeddings (caller handles vectors).
+        """
+
+    @abstractmethod
+    async def get_session_episode_count(self, session_id: str) -> int:
+        """
+        Returns total episode count for a session.
+        Used to check if summarization threshold is reached.
+        """
+
     # -- Facts --
 
     @abstractmethod

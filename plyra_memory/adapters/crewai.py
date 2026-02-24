@@ -41,7 +41,6 @@ class MemoryTool:
     def run(self, query: str) -> str:
         """Sync wrapper for CrewAI tools."""
         import asyncio
-        import threading
 
         try:
             loop = asyncio.get_running_loop()
@@ -52,7 +51,6 @@ class MemoryTool:
             # If called from an async testing script, bridge using run_coroutine_threadsafe.
             # But we must do it on a distinct thread that runs its own loop, OR just return what we can.
             # Easiest way to bypass in a test is nest_asyncio, or just direct thread execution.
-            import functools
 
             def _thread_worker() -> str:
                 return asyncio.run(self.arun(query))

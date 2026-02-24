@@ -73,6 +73,7 @@ class EpisodeEvent(StrEnum):
     SESSION_END = "session_end"
     MEMORY_PROMOTED = "memory_promoted"
     POLICY_BLOCK = "policy_block"
+    SUMMARY = "summary"
     CUSTOM = "custom"
 
 
@@ -207,6 +208,7 @@ class Episode(_ImmutableBase):
     sequence_num: int = 0
     promoted: bool = False
     promoted_to: str | None = None
+    summarized: bool = False
     created_at: datetime = Field(default_factory=_utcnow)
     metadata: dict[str, Any] = Field(default_factory=dict)
 

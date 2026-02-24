@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-import re
+import os
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -13,7 +13,6 @@ from plyra_memory.schema import (
     Episode,
     EpisodeEvent,
     Fact,
-    FactRelation,
     MemoryLayer,
     RecallRequest,
     RecallResult,
@@ -33,76 +32,6 @@ if TYPE_CHECKING:
     from plyra_memory.vectors.base import VectorBackend
 
 log = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Heuristic fact-extraction patterns  (subject, predicate, object_template)
-# ---------------------------------------------------------------------------
-_FACT_PATTERNS: list[tuple[re.Pattern[str], str, FactRelation, str]] = [
-    (
-        re.compile(r"my name is (\w+)", re.IGNORECASE),
-        "user",
-        FactRelation.IS,
-        r"named \1",
-    ),
-    (
-        re.compile(
-            r"i(?:'m| am) (?:a |an )?(\w[\w\s]{2,30}?)(?:\.|,|$| and| who)",
-            re.IGNORECASE,
-        ),
-        "user",
-        FactRelation.IS_A,
-        r"\1",
-    ),
-    (
-        re.compile(
-            r"i (?:prefer|like|love|enjoy) ([\w\s]+?)(?:\.|,|$| over| more| and)",
-            re.IGNORECASE,
-        ),
-        "user",
-        FactRelation.PREFERS,
-        r"\1",
-    ),
-    (
-        re.compile(
-            r"i (?:don't like|dislike|hate|don't enjoy) ([\w\s]+?)(?:\.|,|$| and)",
-            re.IGNORECASE,
-        ),
-        "user",
-        FactRelation.DISLIKES,
-        r"\1",
-    ),
-    (
-        re.compile(
-            r"i(?:'m| am) working on ([\w\s]+?)(?:\.|,|$| and| with)",
-            re.IGNORECASE,
-        ),
-        "user",
-        FactRelation.WORKS_ON,
-        r"\1",
-    ),
-    (
-        re.compile(r"i use ([\w\s]+?)(?:\.|,|$| for| and)", re.IGNORECASE),
-        "user",
-        FactRelation.USES,
-        r"\1",
-    ),
-    (
-        re.compile(
-            r"i(?:'m| am) (?:based in|from|living in|located in) "
-            r"([\w\s]+?)(?:\.|,|$| and)",
-            re.IGNORECASE,
-        ),
-        "user",
-        FactRelation.LOCATED_IN,
-        r"\1",
-    ),
-    (
-        re.compile(r"i know ([\w\s]+?)(?:\.|,|$| and| very)", re.IGNORECASE),
-        "user",
-        FactRelation.KNOWS,
-        r"\1",
-    ),
-]
 
 
 class Memory:
@@ -125,6 +54,8 @@ class Memory:
         embedder: Embedder | None = None,
         vectors: VectorBackend | None = None,
         store: StorageBackend | None = None,
+        extractor=None,
+        llm_client=None,
     ) -> None:
         self._config = config or MemoryConfig.default()
         self._agent_id = agent_id
@@ -136,6 +67,8 @@ class Memory:
         self._injected_store = store
         self._injected_vectors = vectors
         self._injected_embedder = embedder
+        self._extractor = extractor
+        self._llm_client = llm_client
 
         # All None until _ensure_initialized
         self._store: StorageBackend | None = None
@@ -147,11 +80,38 @@ class Memory:
         self._retrieval: HybridRetrieval | None = None
         self._cache: SemanticCache | None = None
         self._session: Session | None = None
+        self._promoter = None
+        self._summarizer = None
+        self._bg_tasks: set = set()
+
+        # HTTP backend mode
+        self._use_http = False
+        self._http_backend = None
 
     async def _ensure_initialized(self) -> None:
         if self._initialized:
             return
 
+        # Auto-detect server mode
+        server_url = os.environ.get("PLYRA_SERVER_URL") or self._config.__dict__.get(
+            "server_url"
+        )
+        api_key = os.environ.get("PLYRA_API_KEY")
+
+        if server_url and api_key:
+            from plyra_memory.backends.http import HTTPMemoryBackend
+
+            self._http_backend = HTTPMemoryBackend(
+                server_url=server_url,
+                api_key=api_key,
+                agent_id=self._agent_id,
+            )
+            self._use_http = True
+            self._initialized = True
+            log.info("Memory initialized in HTTP mode (server=%s)", server_url)
+            return
+
+        self._use_http = False
         self._start_time = time.monotonic()
 
         from plyra_memory.layers.episodic import EpisodicLayer
@@ -199,14 +159,30 @@ class Memory:
         self.semantic = SemanticLayer(
             self._store, self._vectors, self._embedder, self._config
         )
+
+        # Initialize consolidation components
+        from plyra_memory.consolidation.promoter import AutoPromoter
+        from plyra_memory.consolidation.summarizer import EpisodicSummarizer
+
+        self._promoter = AutoPromoter(self._store, self.semantic, self._config)
+        self._summarizer = EpisodicSummarizer(
+            self._store, self._vectors, self._embedder, self._config, self._llm_client
+        )
+
         self._retrieval = HybridRetrieval(
             self.working,
             self.episodic,
             self.semantic,
             self._embedder,
             self._config,
+            promoter=self._promoter,
         )
         self._cache = SemanticCache(self._embedder, self._config)
+
+        # Route to HTTP backend if in server mode
+        if self._use_http:
+            return await self._http_backend.recall(query, top_k)
+
 
         # Create or resume session
         existing = await self._store.get_session(self._session_id)
@@ -231,6 +207,11 @@ class Memory:
     ) -> RecallResult:
         """Recall relevant memories across all layers."""
         await self._ensure_initialized()
+
+        # Route to HTTP backend if in server mode
+        if self._use_http:
+            return await self._http_backend.recall(query, top_k)
+
         assert self._cache is not None
         assert self._retrieval is not None
 
@@ -265,6 +246,13 @@ class Memory:
     ) -> ContextResult:
         """Build a context string within a token budget."""
         await self._ensure_initialized()
+
+        # Route to HTTP backend if in server mode
+        if self._use_http:
+            return await self._http_backend.context_for(
+                query, token_budget or self._config.default_token_budget
+            )
+
         budget = token_budget or self._config.default_token_budget
 
         recall_result = await self.recall(query, top_k=50, layers=layers)
@@ -313,6 +301,13 @@ class Memory:
         "facts": [Fact, ...]}``.
         """
         await self._ensure_initialized()
+
+        # Route to HTTP backend if in server mode
+        if self._use_http:
+            return await self._http_backend.remember(
+                content, importance, source, metadata
+            )
+
         assert self.working is not None
         assert self.episodic is not None
 
@@ -344,35 +339,56 @@ class Memory:
         results["episodic"] = await self.episodic.record(episode_obj)
         results["episode"] = results["episodic"]
 
-        # 3. Semantic — extract facts (never raises)
-        results["facts"] = await self._extract_and_learn(content)
+        # 3. Semantic — extract facts (background task, non-blocking)
+        async def _bg_extract():
+            try:
+                return await self._extract_and_learn(content)
+            except Exception:
+                return []
+
+        # Fire and forget — extraction runs after remember() returns
+        import asyncio
+
+        task = asyncio.create_task(_bg_extract())
+        results["facts"] = []  # facts not available synchronously anymore
+
+        # Store task reference to prevent GC
+        self._bg_tasks.add(task)
+        task.add_done_callback(self._bg_tasks.discard)
 
         return results
 
     async def _extract_and_learn(self, text: str) -> list[Fact]:
-        """Heuristic regex fact extraction.  **Never raises.**"""
+        """
+        Extract facts from text using configured extractor.
+        Falls back to RegexExtractor if no LLMExtractor configured.
+        """
         assert self.semantic is not None
-        learned: list[Fact] = []
-        for pattern, subject, predicate, obj_template in _FACT_PATTERNS:
+        from plyra_memory.extraction.regex import RegexExtractor
+
+        extractor = self._extractor or RegexExtractor()
+
+        candidates = await extractor.extract(text, self._agent_id)
+        stored = []
+        for kwargs in candidates:
             try:
-                match = pattern.search(text)
-                if not match:
-                    continue
-                obj_value = match.expand(obj_template).strip()
-                if len(obj_value) < 2:
-                    continue
+                # Create Fact object from extracted data
                 fact = Fact(
                     agent_id=self._agent_id,
-                    subject=subject,
-                    predicate=predicate,
-                    object=obj_value,
-                    confidence=self._config.fact_extraction_confidence,
+                    content=f"{kwargs['subject']} {kwargs['predicate'].value} {kwargs['object_']}",
+                    subject=kwargs['subject'],
+                    predicate=kwargs['predicate'],
+                    object=kwargs['object_'],
+                    confidence=kwargs.get('confidence', 0.8),
+                    source_episode_id=kwargs.get('source_episode_id'),
+                    metadata=kwargs.get('metadata', {}),
                 )
+                # Store the fact
                 result = await self.semantic.learn(fact)
-                learned.append(result)
+                stored.append(result)
             except Exception:
-                log.debug("fact extraction skipped for pattern %s", pattern.pattern)
-        return learned
+                pass
+        return stored
 
     # ------------------------------------------------------------------
     # Flush / lifecycle
@@ -391,10 +407,24 @@ class Memory:
         )
         self._session = self._session.end()
         await self._store.update_session(self._session)
+
+        # Trigger summarization check after flush
+        if self._summarizer:
+            import asyncio
+
+            asyncio.create_task(
+                self._summarizer.maybe_summarize(self._session_id, self._agent_id)
+            )
+
         return episodes
 
     async def close(self) -> None:
         """Close all connections."""
+        if self._use_http and self._http_backend:
+            await self._http_backend.close()
+            self._initialized = False
+            return
+
         if self._initialized:
             assert self._store is not None
             assert self._vectors is not None
@@ -416,3 +446,49 @@ class Memory:
     @property
     def agent_id(self) -> str:
         return self._agent_id
+
+    @classmethod
+    def with_anthropic(
+        cls,
+        api_key: str,
+        agent_id: str = "default-agent",
+        config: MemoryConfig | None = None,
+        **kwargs,
+    ) -> Memory:
+        """Convenience constructor with Anthropic client for extraction + summarization."""
+        import anthropic
+
+        from plyra_memory.extraction.llm import LLMExtractor
+
+        client = anthropic.Anthropic(api_key=api_key)
+        extractor = LLMExtractor(client)
+        return cls(
+            config=config,
+            agent_id=agent_id,
+            extractor=extractor,
+            llm_client=client,
+            **kwargs,
+        )
+
+    @classmethod
+    def with_openai(
+        cls,
+        api_key: str,
+        agent_id: str = "default-agent",
+        config: MemoryConfig | None = None,
+        **kwargs,
+    ) -> Memory:
+        """Convenience constructor with OpenAI client for extraction + summarization."""
+        import openai
+
+        from plyra_memory.extraction.llm import LLMExtractor
+
+        client = openai.OpenAI(api_key=api_key)
+        extractor = LLMExtractor(client)
+        return cls(
+            config=config,
+            agent_id=agent_id,
+            extractor=extractor,
+            llm_client=client,
+            **kwargs,
+        )

@@ -43,6 +43,16 @@ class MemoryConfig(BaseSettings):
     semantic_default_confidence: float = 0.8
     semantic_decay_lambda: float = 0.05
 
+    # Auto-promotion
+    promotion_age_days: int = 7
+    promotion_check_enabled: bool = True
+
+    # Episodic summarization
+    summarize_enabled: bool = True
+    summarize_session_threshold: int = 20
+    summarize_recent_days: int = 30
+    summarize_max_episodes: int = 10
+
     # Retrieval
     chroma_collection_name: str = "plyra_memory"
     fact_extraction_confidence: float = 0.85

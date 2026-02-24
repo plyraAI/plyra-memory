@@ -118,6 +118,7 @@ class SQLiteStore(StorageBackend):
                 sequence_num INTEGER NOT NULL DEFAULT 0,
                 promoted INTEGER NOT NULL DEFAULT 0,
                 promoted_to TEXT,
+                summarized INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
                 metadata TEXT NOT NULL DEFAULT '{}'
             );
@@ -157,6 +158,17 @@ class SQLiteStore(StorageBackend):
             """
         )
         await self._conn.commit()
+
+        # Migration: add summarized column to episodes if it doesn't exist
+        try:
+            await self._conn.execute(
+                "ALTER TABLE episodes ADD COLUMN summarized INTEGER NOT NULL DEFAULT 0"
+            )
+            await self._conn.commit()
+            log.info("Added summarized column to episodes table")
+        except aiosqlite.OperationalError:
+            # Column already exists
+            pass
 
         # Initialise or check schema version
         cursor = await self._conn.execute("SELECT version FROM schema_version LIMIT 1")
@@ -344,8 +356,8 @@ class SQLiteStore(StorageBackend):
             """INSERT INTO episodes
                (id, session_id, agent_id, event, content, tool_name,
                 tool_input, tool_output, tool_error, importance, access_count,
-                sequence_num, promoted, promoted_to, created_at, metadata)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                sequence_num, promoted, promoted_to, summarized, created_at, metadata)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 episode.id,
                 episode.session_id,
@@ -361,6 +373,7 @@ class SQLiteStore(StorageBackend):
                 episode.sequence_num,
                 1 if episode.promoted else 0,
                 episode.promoted_to,
+                1 if episode.summarized else 0,
                 _dt_to_str(episode.created_at),
                 _dict_to_json(episode.metadata),
             ),
@@ -457,6 +470,7 @@ class SQLiteStore(StorageBackend):
             sequence_num=row["sequence_num"],
             promoted=bool(row["promoted"]),
             promoted_to=row["promoted_to"] or None,
+            summarized=bool(row["summarized"] if "summarized" in row.keys() else 0),
             created_at=_str_to_dt(row["created_at"]),
             metadata=_json_to_dict(row["metadata"]),
         )
@@ -639,3 +653,112 @@ class SQLiteStore(StorageBackend):
             row = await cursor.fetchone()
             result[key] = row[0] if row else 0
         return result
+
+    # ---- Auto-promotion and summarization ----
+
+    async def get_episodes_for_promotion(
+        self,
+        agent_id: str,
+        min_access_count: int,
+        min_age_days: int,
+    ) -> list[Episode]:
+        """
+        Returns episodes that meet either promotion trigger:
+          - access_count >= min_access_count
+          - age in days >= min_age_days
+        Only returns episodes where promoted = False.
+        ORDER BY access_count DESC, created_at ASC
+        LIMIT 50 per call to avoid runaway promotion.
+        """
+        conn = self._ensure_conn()
+        from datetime import timedelta
+
+        cutoff_date = datetime.now(UTC) - timedelta(days=min_age_days)
+        cursor = await conn.execute(
+            """SELECT * FROM episodes
+               WHERE agent_id = ?
+                 AND promoted = 0
+                 AND (access_count >= ? OR created_at <= ?)
+               ORDER BY access_count DESC, created_at ASC
+               LIMIT 50""",
+            (agent_id, min_access_count, _dt_to_str(cutoff_date)),
+        )
+        rows = await cursor.fetchall()
+        return [self._row_to_episode(r) for r in rows]
+
+    async def get_episodes_for_summarization(
+        self,
+        session_id: str,
+        threshold: int,
+    ) -> tuple[list[Episode], list[Episode]]:
+        """
+        Returns (recent_episodes, old_episodes) for a session.
+        Only called when total episode count for session >= threshold.
+        recent = created_at within last summarize_recent_days days, not summarized
+        old    = created_at older than summarize_recent_days days, not summarized
+        Both lists exclude already-promoted and already-summarized episodes.
+        """
+        conn = self._ensure_conn()
+        from datetime import timedelta
+
+        recent_cutoff = datetime.now(UTC) - timedelta(
+            days=self._config.summarize_recent_days
+        )
+
+        # Get recent episodes (within summarize_recent_days)
+        cursor = await conn.execute(
+            """SELECT * FROM episodes
+               WHERE session_id = ?
+                 AND promoted = 0
+                 AND summarized = 0
+                 AND created_at >= ?
+               ORDER BY created_at ASC""",
+            (session_id, _dt_to_str(recent_cutoff)),
+        )
+        recent_rows = await cursor.fetchall()
+        recent = [self._row_to_episode(r) for r in recent_rows]
+
+        # Get old episodes (older than summarize_recent_days)
+        cursor = await conn.execute(
+            """SELECT * FROM episodes
+               WHERE session_id = ?
+                 AND promoted = 0
+                 AND summarized = 0
+                 AND created_at < ?
+               ORDER BY created_at ASC""",
+            (session_id, _dt_to_str(recent_cutoff)),
+        )
+        old_rows = await cursor.fetchall()
+        old = [self._row_to_episode(r) for r in old_rows]
+
+        return (recent, old)
+
+    async def delete_episodes_by_ids(self, episode_ids: list[str]) -> int:
+        """
+        Bulk delete episodes by id list.
+        Returns count deleted.
+        Also deletes their vector embeddings (caller handles vectors).
+        """
+        if not episode_ids:
+            return 0
+        conn = self._ensure_conn()
+        placeholders = ",".join("?" for _ in episode_ids)
+        cursor = await conn.execute(
+            f"DELETE FROM episodes WHERE id IN ({placeholders})",  # noqa: S608
+            episode_ids,
+        )
+        await conn.commit()
+        return cursor.rowcount
+
+    async def get_session_episode_count(self, session_id: str) -> int:
+        """
+        Returns total episode count for a session.
+        Used to check if summarization threshold is reached.
+        """
+        conn = self._ensure_conn()
+        cursor = await conn.execute(
+            "SELECT COUNT(*) FROM episodes WHERE session_id = ?",
+            (session_id,),
+        )
+        row = await cursor.fetchone()
+        return row[0] if row else 0

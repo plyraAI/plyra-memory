@@ -48,12 +48,14 @@ class HybridRetrieval:
         semantic: SemanticLayer,
         embedder: Embedder,
         config: MemoryConfig,
+        promoter=None,
     ) -> None:
         self._working = working
         self._episodic = episodic
         self._semantic = semantic
         self._embedder = embedder
         self._config = config
+        self._promoter = promoter
 
     async def recall(
         self,
@@ -112,6 +114,7 @@ class HybridRetrieval:
                 session_id=request.session_id,
                 top_k=request.top_k * 2,
                 query_embedding=query_embedding,
+                promoter=self._promoter,
             )
             decay = self._config.semantic_decay_lambda
             for ep, sim in ep_results:

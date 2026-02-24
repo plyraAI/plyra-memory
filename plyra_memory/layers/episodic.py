@@ -68,6 +68,7 @@ class EpisodicLayer:
         top_k: int = 10,
         *,
         query_embedding: list[float] | None = None,
+        promoter=None,
     ) -> list[tuple[Episode, float]]:
         """Semantic search over episodes. Returns (episode, score) tuples."""
         embedding = (
@@ -91,6 +92,13 @@ class EpisodicLayer:
                 continue
             await self._store.increment_episode_access(ep.id)
             results.append((ep, vr["score"]))
+
+        # Trigger auto-promotion check after search hits (background task)
+        if promoter and agent_id and results:
+            import asyncio
+
+            asyncio.create_task(promoter.check_and_promote(agent_id))
+
         return results[:top_k]
 
     async def query(self, query: EpisodicQuery) -> list[Episode]:

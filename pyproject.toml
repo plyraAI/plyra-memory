@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "plyra-memory"
-version = "0.1.0"
+version = "0.3.0"
 description = "Persistent structured memory for agentic AI"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -36,16 +36,18 @@ dependencies = [
     "sentence-transformers>=2.7",
     "chromadb>=0.5",
     "openai>=2.21.0",
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
+anthropic = ["anthropic>=0.20"]
+openai = ["openai>=1.0"]
 dev = [
     "pytest>=7.0",
     "pytest-cov",
     "pytest-asyncio",
     "ruff",
     "mypy",
-    "httpx>=0.27",
 ]
 
 [project.scripts]
@@ -82,6 +84,9 @@ disable_error_code = ["import-untyped"]
 
 [dependency-groups]
 dev = [
+    "mkdocs-git-revision-date-localized-plugin>=1.5.1",
+    "mkdocs-material>=9.7.3",
+    "mkdocs-minify-plugin>=0.8.0",
     "pytest-randomly>=4.0.1",
     "truststore>=0.10.4",
 ]
