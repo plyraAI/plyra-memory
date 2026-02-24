@@ -454,7 +454,7 @@ class Memory:
         config: MemoryConfig | None = None,
         **kwargs,
     ) -> Memory:
-        """Convenience constructor with Anthropic client for extraction + summarization."""
+        """Anthropic convenience constructor for extraction + summarization."""
         import anthropic
 
         from plyra_memory.extraction.llm import LLMExtractor
@@ -477,7 +477,7 @@ class Memory:
         config: MemoryConfig | None = None,
         **kwargs,
     ) -> Memory:
-        """Convenience constructor with OpenAI client for extraction + summarization."""
+        """OpenAI convenience constructor for extraction + summarization."""
         import openai
 
         from plyra_memory.extraction.llm import LLMExtractor
