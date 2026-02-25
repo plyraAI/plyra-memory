@@ -89,6 +89,7 @@ dev = [
     "mkdocs-git-revision-date-localized-plugin>=1.5.1",
     "mkdocs-material>=9.7.3",
     "mkdocs-minify-plugin>=0.8.0",
+    "plyra-guard>=0.1.9",
     "pytest-randomly>=4.0.1",
     "truststore>=0.10.4",
 ]

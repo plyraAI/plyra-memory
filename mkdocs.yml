@@ -50,7 +50,11 @@ plugins:
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -88,7 +92,7 @@ nav:
   - Fact Extraction:
     - Overview: extraction/index.md
     - RegexExtractor: extraction/regex.md
-    - LLMExtractor: extraction/llm.md
+    - LLMExtractor (Groq / OpenAI / Anthropic): extraction/llm.md
     - Custom extractor: extraction/custom.md
   - Server Mode:
     - Overview: server/index.md
@@ -100,6 +104,7 @@ nav:
     - Multi-agent setup: guides/multi-agent.md
     - Fact extraction tips: guides/fact-extraction.md
     - Production checklist: guides/production.md
+  - plyra-guard integration: guard-integration.md
   - Changelog: changelog.md
 
 extra:

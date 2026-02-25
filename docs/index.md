@@ -1,5 +1,6 @@
 ---
 hide:
+  - navigation
   - toc
 ---
 
@@ -9,82 +10,85 @@ hide:
   Local-first. Server-optional. Framework-agnostic.</p>
 </div>
 
-<div class="plyra-grid">
-  <div class="plyra-card">
-    <h3>Zero config</h3>
-    <p>pip install and go. SQLite + ChromaDB, everything local.</p>
-  </div>
-  <div class="plyra-card">
-    <h3>Three layers</h3>
-    <p>Working, episodic, and semantic memory. One API for all three.</p>
-  </div>
-  <div class="plyra-card">
-    <h3>Five frameworks</h3>
-    <p>LangGraph, AutoGen, LangChain, CrewAI, OpenAI Agents.</p>
-  </div>
-  <div class="plyra-card">
-    <h3>Server mode</h3>
-    <p>Two env vars. All agents share one memory layer.</p>
-  </div>
-</div>
-
-## Install
-
 ```bash
 pip install plyra-memory
 ```
 
-## The simplest possible usage
-
 ```python
 from plyra_memory import Memory
 
-async with Memory() as memory:
-    await memory.remember("user prefers Python async frameworks")
-    ctx = await memory.context_for("what stack does the user use?")
+async with Memory(agent_id="my-agent") as memory:
+    await memory.remember("user prefers TypeScript and hates verbose config")
+    ctx = await memory.context_for("what stack does the user like?")
     print(ctx.content)
+    # → "User prefers TypeScript. Dislikes verbose configuration."
 ```
-
-That's it. Memory persists across restarts. No config required.
-
-## How it works
-
-```
-Your agent calls  →  memory.remember(content)
-                         ↓
-                  ┌──────────────────────┐
-                  │  working memory      │  this session
-                  │  episodic memory     │  all sessions, vector search
-                  │  semantic memory     │  extracted facts, decay model
-                  └──────────────────────┘
-                         ↓
-Your agent calls  →  memory.context_for(query)
-                         ↓
-                  prompt-ready context string, injected before LLM call
-```
-
-## Next steps
 
 <div class="plyra-grid">
   <div class="plyra-card">
-    <h3><a href="quickstart/">Quickstart</a></h3>
-    <p>Running example in 5 minutes.</p>
+    <h3>Three Memory Layers</h3>
+    <p>Working → Episodic → Semantic. Automatic promotion. LLM-powered extraction.</p>
   </div>
   <div class="plyra-card">
-    <h3><a href="concepts/">Concepts</a></h3>
-    <p>How the three memory layers work.</p>
+    <h3>Framework-Agnostic</h3>
+    <p>LangGraph, AutoGen, LangChain, CrewAI, OpenAI Agents, plain Python.</p>
   </div>
   <div class="plyra-card">
-    <h3><a href="adapters/">Adapters</a></h3>
-    <p>LangGraph, AutoGen, LangChain, CrewAI, OpenAI.</p>
+    <h3>Local-First</h3>
+    <p>Zero config. SQLite + ChromaDB on disk. Add a server URL to go multi-agent.</p>
   </div>
   <div class="plyra-card">
-    <h3><a href="server/">Server mode</a></h3>
-    <p>Multi-agent, multi-tenant deployment.</p>
+    <h3>Production-Grade</h3>
+    <p>Server mode with workspace isolation. Azure-ready Docker image.</p>
   </div>
 </div>
 
+## Architecture
+
+```mermaid
+graph LR
+  A["Your Agent"] --> B["Memory()"]
+  B --> C{Mode?}
+  C -->|"No env vars"| D["Local Mode"]
+  C -->|"PLYRA_SERVER_URL set"| E["Server Mode"]
+  D --> F["SQLite\n~/.plyra/memory.db"]
+  D --> G["ChromaDB\n~/.plyra/vectors/"]
+  E --> H["plyra-memory-server\nAzure / Docker"]
+  H --> I["Shared SQLite\n/data/memory.db"]
+  H --> J["Shared Vectors\n/data/memory.index"]
+
+  style B fill:#818cf8,color:#0d1117
+  style D fill:#161b22,color:#e6edf3
+  style E fill:#161b22,color:#e6edf3
+  style H fill:#2dd4bf,color:#0d1117
+```
+
+## Three-Layer Memory Model
+
+```mermaid
+graph TD
+  A["remember('user prefers Python')"] --> B["Working Memory\nRecent context\nfast read/write"]
+  B -->|"access_count >= 3\nor age >= 7 days"| C["Episodic Memory\nCompressed sessions\nLLM summarization"]
+  C -->|"LLM extraction\nbackground task"| D["Semantic Memory\nFacts + vectors\nchromadb similarity"]
+  D --> E["context_for(query)\nreturns ranked, token-budgeted string"]
+  B --> E
+  C --> E
+
+  style A fill:#0d1117,color:#2dd4bf
+  style B fill:#161b22,color:#818cf8
+  style C fill:#161b22,color:#818cf8
+  style D fill:#161b22,color:#818cf8
+  style E fill:#0d1117,color:#2dd4bf
+```
+
+## Quick navigation
+
+- New here? → [Quickstart](quickstart.md)
+- How does it work? → [Concepts](concepts.md)
+- Using LangGraph? → [LangGraph adapter](adapters/langgraph.md)
+- Multiple agents? → [Server mode](server/index.md)
+- Need guard + memory together? → [Guard integration](guard-integration.md)
+
 ---
 
-Part of the [Plyra](https://plyraai.github.io) open-source stack.
-Also see [plyra-guard](https://plyraai.github.io/plyra-guard) — action middleware for agents.
+[GitHub](https://github.com/plyraAI/plyra-memory) · [PyPI](https://pypi.org/project/plyra-memory) · [plyra-guard](https://plyraai.github.io/plyra-guard) · [@plyraAI](https://x.com/plyraAI)

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0
+
+- **Groq support** — `Memory.with_groq()`, `GROQ_API_KEY` auto-detection
+  - `llama-3.1-8b-instant` default — 800 tokens/second, free tier
+  - Any OpenAI-compatible provider supported via `LLMExtractor(client, base_url=...)`
+- **HTTP backend** — `PLYRA_SERVER_URL` + `PLYRA_API_KEY` activates server mode
+  - Zero code changes — same `Memory()` API
+  - All adapters (LangGraph, AutoGen, LangChain, CrewAI, OpenAI Agents) work in server mode
+- **plyra-memory-server** — production server live at Azure Central India
+- **AutoGen adapter fix** — `before_reply()` return type corrected to `list`
+- **OpenAI Agents adapter fix** — `_MemoryTool` wrapper for proper `.name` + `.coroutine`
+- 101+ tests passing
+
 ## v0.2.0
 
 - LLM fact extraction (`LLMExtractor`) — Anthropic and OpenAI support
