@@ -69,6 +69,7 @@ class EpisodicLayer:
         *,
         query_embedding: list[float] | None = None,
         promoter=None,
+        bg_tasks: set | None = None,
     ) -> list[tuple[Episode, float]]:
         """Semantic search over episodes. Returns (episode, score) tuples."""
         embedding = (
@@ -97,7 +98,10 @@ class EpisodicLayer:
         if promoter and agent_id and results:
             import asyncio
 
-            asyncio.create_task(promoter.check_and_promote(agent_id))
+            task = asyncio.create_task(promoter.check_and_promote(agent_id))
+            if bg_tasks is not None:
+                bg_tasks.add(task)
+                task.add_done_callback(bg_tasks.discard)
 
         return results[:top_k]
 

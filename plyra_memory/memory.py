@@ -236,6 +236,7 @@ class Memory:
             self._embedder,
             self._config,
             promoter=self._promoter,
+            bg_tasks=self._bg_tasks,
         )
         self._cache = SemanticCache(self._embedder, self._config)
 
@@ -471,9 +472,11 @@ class Memory:
         if self._summarizer:
             import asyncio
 
-            asyncio.create_task(
+            task = asyncio.create_task(
                 self._summarizer.maybe_summarize(self._session_id, self._agent_id)
             )
+            self._bg_tasks.add(task)
+            task.add_done_callback(self._bg_tasks.discard)
 
         return episodes
 
@@ -487,6 +490,16 @@ class Memory:
         if self._initialized:
             assert self._store is not None
             assert self._vectors is not None
+
+            # Cancel all pending background tasks before closing the DB
+            import asyncio
+
+            for task in list(self._bg_tasks):
+                task.cancel()
+            if self._bg_tasks:
+                await asyncio.gather(*self._bg_tasks, return_exceptions=True)
+            self._bg_tasks.clear()
+
             await self._store.close()
             await self._vectors.close()
             self._initialized = False
